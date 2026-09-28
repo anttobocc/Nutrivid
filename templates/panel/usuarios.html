@@ -1,5 +1,5 @@
 {% extends "panel/base_panel.html" %}
-{% block title %}Usuarios | Panel Grandiet{% endblock %}
+{% block title %}Usuarios | Panel Nutrivid{% endblock %}
 {% block panel_main_class %}panel-main-wide{% endblock %}
 {% block panel_content %}
 <div class="toolbar">
@@ -11,7 +11,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Usuario</th><th>Nombre</th><th>Sucursales</th><th>Estado</th><th>Acciones</th><th>Activo</th></tr>
+          <tr><th>Usuario</th><th>Nombre</th><th>Sucursales</th><th>Estado</th><th>Acciones</th></tr>
         </thead>
         <tbody>
           {% for usuario in usuarios %}
@@ -23,8 +23,21 @@
                 {% for s in sucursales %}{{ s.nombre }}{% if not forloop.last %}, {% endif %}{% empty %}<em>Sin sucursal asignada</em>{% endfor %}
               {% endwith %}
             </td>
-            <td>
-              {% if usuario.is_active %}<span class="badge badge-best">activo</span>{% else %}<span class="badge badge-off">inactivo</span>{% endif %}
+            <td class="td-estado">
+              <div class="estado-switch">
+                <form method="post" action="{% url 'panel:usuario_toggle_activo' usuario.pk %}" class="activo-form">
+                  {% csrf_token %}
+                  <input
+                    type="checkbox"
+                    class="switch-input"
+                    name="activo"
+                    onchange="this.form.submit()"
+                    {% if usuario.is_active %}checked{% endif %}
+                    title="Usuario activo (puede iniciar sesión)"
+                    aria-label="Activar o desactivar {{ usuario.username }}">
+                </form>
+                <span class="estado-texto">{% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}</span>
+              </div>
             </td>
             <td class="td-actions">
               <div class="td-actions-inner">
@@ -33,22 +46,9 @@
                 <a class="btn btn-danger btn-sm" href="#borrar-usuario-{{ usuario.pk }}">Eliminar</a>
               </div>
             </td>
-            <td class="td-activo">
-              <form method="post" action="{% url 'panel:usuario_toggle_activo' usuario.pk %}" class="activo-form">
-                {% csrf_token %}
-                <input
-                  type="checkbox"
-                  class="switch-input"
-                  name="activo"
-                  onchange="this.form.submit()"
-                  {% if usuario.is_active %}checked{% endif %}
-                  title="Usuario activo (puede iniciar sesión)"
-                  aria-label="Activar o desactivar {{ usuario.username }}">
-              </form>
-            </td>
           </tr>
           {% empty %}
-          <tr class="empty-row"><td colspan="6">No hay usuarios normales todavía.</td></tr>
+          <tr class="empty-row"><td colspan="5">No hay usuarios normales todavía.</td></tr>
           {% endfor %}
         </tbody>
       </table>

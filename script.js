@@ -41,12 +41,54 @@ let products = [];
 let sucursales = [];
 let sucursalActual = null;
 
+// Iconos (trazo) de los beneficios que se muestran debajo del texto de cada slide.
+const BENEFIT_ICONS = {
+  leaf: '<path d="M5 19c0-8 5-13 14-14 0 9-5 14-13 14zM5 19l7-7"/>',
+  bone: '<path d="M8.5 15.5l7-7M6 13a2.5 2.5 0 1 1 1.8-4.3A2.5 2.5 0 1 1 12 7l-5 5zM18 11a2.5 2.5 0 1 1-1.8 4.3A2.5 2.5 0 1 1 12 17l5-5z"/>',
+  hair: '<path d="M5 20c1-6 1-10 3-15M10 20c0-6 1-10 3-15M15 20c0-5 1-9 4-14M3 20h18"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  bolt: '<path d="M13 3L5 14h6l-1 7 8-11h-6z"/>',
+  check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.3 2.3 4.7-4.8"/>',
+  box: '<path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  chat: '<path d="M4 19l1.3-3.5A8 8 0 1 1 8.5 19z"/>',
+  muscle: '<path d="M6 17c-2-3-1-9 3-11l2 2-2 2c1 2 3 2 5 1 3-1 6 1 5 5-1 2-4 3-8 3-2 0-4-1-5-2z"/>',
+};
+
+// "product": texto que se busca en el nombre del producto para que el boton
+// "Agregar al carrito" del slide lo sume directo. Si el producto no existe en
+// la sucursal actual, el boton lleva al catalogo filtrado por la categoria.
 const slides = [
-  { title: "Colageno hidrolizado", kicker: "20% OFF", description: "Promo destacada por tiempo limitado. Sumalo a tu pedido y confirma stock por WhatsApp.", category: "Suplementos", image: "assets/colageno-hidrolizado.jpg", bg: "#eef6e3", discount: "20%" },
-  { title: "Frutos secos premium", kicker: "Seleccion especial", description: "Mixes frescos para desayunos, meriendas y picadas saludables.", category: "Frutos secos", image: "assets/mix-premium-frutos-secos.jpg", bg: "#fff3e7" },
-  { title: "Productos Sin TACC", kicker: "Aptos y practicos", description: "Premezclas, snacks y opciones para resolver tus compras rapido.", category: "Sin TACC", image: "assets/productos-sin-TACC.jpg", bg: "#fff8db" },
-  { title: "Envios a domicilio", kicker: "Compra comoda", description: "Arma el carrito, envia el pedido y coordinamos entrega o retiro.", category: "Todos", image: "assets/envios.jpg", bg: "#e7f4d5" },
-  { title: "Suplementos deportivos", kicker: "Nueva seleccion", description: "Proteinas y complementos para entrenar con mejor organizacion.", category: "Suplementos", image: "assets/suplementos-deportivos.jpg", bg: "#e8f4f7" },
+  {
+    title: "Colageno hidrolizado", kicker: "20% OFF",
+    description: "Promo destacada por tiempo limitado.<br>Sumalo a tu pedido y confirmá stock por WhatsApp.",
+    category: "Suplementos", image: "assets/colageno-hidrolizado.jpg", photo: "assets/colageno-portada.jpg", bg: "#e4efd4", product: "colageno",
+    benefits: [["leaf", "Apoya la salud de la piel"], ["bone", "Fortalece huesos y articulaciones"], ["hair", "Contribuye al cabello y uñas"]],
+  },
+  {
+    title: "Frutos secos premium", kicker: "Seleccion especial",
+    description: "Mixes frescos para desayunos, meriendas y picadas saludables.",
+    category: "Frutos secos", image: "assets/mix-premium-frutos-secos.jpg", bg: "#f6e6d2", product: "mix premium",
+    benefits: [["bolt", "Energia natural"], ["heart", "Grasas saludables"], ["leaf", "Sin conservantes"]],
+  },
+  {
+    title: "Productos Sin TACC", kicker: "Aptos y practicos",
+    description: "Premezclas, snacks y opciones para resolver tus compras rapido.",
+    category: "Sin TACC", image: "assets/productos-sin-TACC.jpg", bg: "#f5edc9",
+    benefits: [["check", "Aptos celiacos"], ["box", "Variedad de marcas"], ["leaf", "Opciones saludables"]],
+  },
+  {
+    title: "Envios a domicilio", kicker: "Compra comoda",
+    description: "Arma el carrito, envia el pedido y coordinamos entrega o retiro.",
+    category: "Todos", image: "assets/envios.jpg", bg: "#dcebc8",
+    benefits: [["chat", "Pedido por WhatsApp"], ["clock", "Entrega coordinada"], ["box", "Retiro en sucursal"]],
+  },
+  {
+    title: "Suplementos deportivos", kicker: "Nueva seleccion",
+    description: "Proteinas y complementos para entrenar con mejor organizacion.",
+    category: "Suplementos", image: "assets/suplementos-deportivos.jpg", bg: "#dbeaf0", product: "whey",
+    benefits: [["muscle", "Recuperacion muscular"], ["bolt", "Mas rendimiento"], ["check", "Marcas reconocidas"]],
+  },
 ];
 
 let activeCategory = "Todos";
@@ -63,6 +105,10 @@ const els = {
   cartDrawer: document.querySelector("#cartDrawer"),
   cartItems: document.querySelector("#cartItems"),
   cartEmpty: document.querySelector("#cartEmpty"),
+  cartToolbar: document.querySelector("#cartToolbar"),
+  cartItemsLabel: document.querySelector("#cartItemsLabel"),
+  clearCart: document.querySelector("#clearCart"),
+  subtotalCount: document.querySelector("#subtotalCount"),
   cartCount: document.querySelector("#cartCount"),
   subtotal: document.querySelector("#subtotal"),
   sendOrder: document.querySelector("#sendOrder"),
@@ -101,6 +147,11 @@ window.addEventListener("hashchange", resaltarNavActiva);
 
 function money(value) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
+}
+
+// Minusculas y sin tildes, para comparar "Colágeno" con "colageno".
+function normalizeText(value) {
+  return String(value || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 function productImageFor(product) {
@@ -241,20 +292,34 @@ function renderHomeProducts() {
   }
 }
 
+const TAG_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false"><path d="M3 12V4h8l10 10-8 8z" fill="currentColor"/><circle cx="7.5" cy="8.5" r="1.6" fill="#fff"/></svg>';
+const CART_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 4h2l2.4 10.2a1.5 1.5 0 0 0 1.5 1.1h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.4" fill="currentColor"/><circle cx="17" cy="19.5" r="1.4" fill="currentColor"/></svg>';
+const ARROW_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function slideProduct(slide) {
+  if (!slide.product) return null;
+  const needle = normalizeText(slide.product);
+  return products.find((item) => normalizeText(item.name).includes(needle)) || null;
+}
+
 function renderCarousel() {
   if (!els.carouselTrack || !els.carouselDots) return;
-  els.carouselTrack.innerHTML = slides.map((slide) => `
-    <article class="promo-slide" style="--slide-bg:${slide.bg}">
+  els.carouselTrack.innerHTML = slides.map((slide, index) => `
+    <article class="promo-slide" style="--slide-bg:${slide.bg}" aria-roledescription="slide" aria-label="${index + 1} de ${slides.length}">
       <div class="promo-copy">
-        <span class="promo-kicker">${slide.kicker}</span>
+        <span class="promo-kicker">${TAG_ICON}${slide.kicker}</span>
         <h2>${slide.title}</h2>
         <p>${slide.description}</p>
-        <a class="btn btn-primary" href="catalogo.html?category=${encodeURIComponent(slide.category)}">Comprar ahora</a>
+        ${slide.benefits ? `<ul class="promo-benefits">${slide.benefits.map(([icon, text]) => `
+          <li><span aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${BENEFIT_ICONS[icon]}</svg></span>${text}</li>`).join("")}
+        </ul>` : ""}
+        ${slide.product
+          ? `<button type="button" class="btn btn-primary promo-cta" data-slide-add="${index}">${CART_ICON}Agregar al carrito${ARROW_ICON}</button>`
+          : `<a class="btn btn-primary promo-cta" href="catalogo.html?category=${encodeURIComponent(slide.category)}">Ver productos${ARROW_ICON}</a>`}
       </div>
-      <div class="promo-art">
-        <img src="${slide.image}" alt="${slide.title}">
-        ${slide.discount ? `<span class="promo-discount">${slide.discount}</span>` : ""}
-      </div>
+      ${slide.photo
+        ? `<div class="promo-art promo-art--photo"><img src="${slide.photo}" alt="${slide.title}"${index === 0 ? ' fetchpriority="high"' : ' loading="lazy"'}></div>`
+        : `<div class="promo-art"><img src="${slide.image}" alt="${slide.title}"${index === 0 ? ' fetchpriority="high"' : ' loading="lazy"'}></div>`}
     </article>
   `).join("");
   els.carouselDots.innerHTML = slides.map((_, index) => `
@@ -291,6 +356,12 @@ function cartTotals() {
   }, { quantity: 0, subtotal: 0 });
 }
 
+const TRASH_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function productosLabel(cantidad) {
+  return `${cantidad} ${cantidad === 1 ? "producto" : "productos"}`;
+}
+
 function renderCart() {
   const items = [...cart.values()];
   const totals = cartTotals();
@@ -301,21 +372,30 @@ function renderCart() {
         <div class="cart-item-info">
           <strong>${product.name}</strong>
           <small>${money(product.price)}</small>
-          <div class="quantity" aria-label="Cantidad de ${product.name}">
-            <button type="button" data-decrease="${product.id}" aria-label="Restar ${product.name}">-</button>
-            <strong>${quantity}</strong>
-            <button type="button" data-increase="${product.id}" aria-label="Sumar ${product.name}">+</button>
-            <button class="remove-item" type="button" data-remove="${product.id}" aria-label="Eliminar ${product.name}">Eliminar</button>
-          </div>
         </div>
+        <div class="quantity" role="group" aria-label="Cantidad de ${product.name}">
+          <button type="button" data-decrease="${product.id}" aria-label="Restar ${product.name}">−</button>
+          <strong>${quantity}</strong>
+          <button type="button" data-increase="${product.id}" aria-label="Sumar ${product.name}">+</button>
+        </div>
+        <strong class="cart-line-total">${money(product.price * quantity)}</strong>
+        <button class="remove-item" type="button" data-remove="${product.id}" aria-label="Eliminar ${product.name}">${TRASH_ICON}</button>
       </div>
     `).join("");
   }
   if (els.cartEmpty) els.cartEmpty.hidden = items.length > 0;
+  if (els.cartToolbar) els.cartToolbar.hidden = items.length === 0;
+  if (els.cartItemsLabel) els.cartItemsLabel.textContent = productosLabel(totals.quantity);
+  if (els.subtotalCount) els.subtotalCount.textContent = productosLabel(totals.quantity);
   if (els.cartCount) els.cartCount.textContent = totals.quantity;
   if (els.subtotal) els.subtotal.textContent = money(totals.subtotal);
   if (els.sendOrder) els.sendOrder.disabled = items.length === 0;
   saveCart();
+}
+
+function clearCart() {
+  cart.clear();
+  renderCart();
 }
 
 function openCart() {
@@ -364,7 +444,7 @@ function sendOrder() {
   const name = els.customerName?.value.trim() || "";
   const lines = [...cart.values()].map(({ product, quantity }) => `* ${product.name} x ${quantity}`);
   const message = [
-    "Hola Grandiet Corrientes.",
+    "Hola Nutrivid Corrientes.",
     "",
     "Quisiera realizar el siguiente pedido:",
     "",
@@ -451,6 +531,13 @@ function bindEvents() {
     if (event.target.closest("[data-close-cart]")) closeCart();
     const addButton = event.target.closest("[data-add]");
     if (addButton) addToCart(addButton.dataset.add);
+    const slideAdd = event.target.closest("[data-slide-add]");
+    if (slideAdd) {
+      const slide = slides[Number(slideAdd.dataset.slideAdd)];
+      const product = slideProduct(slide);
+      if (product) addToCart(product.id);
+      else window.location.href = `catalogo.html?category=${encodeURIComponent(slide.category)}`;
+    }
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeCart();
@@ -511,6 +598,7 @@ function bindEvents() {
   });
 
   els.sendOrder?.addEventListener("click", sendOrder);
+  els.clearCart?.addEventListener("click", clearCart);
 
   els.sucursalTrigger?.addEventListener("click", abrirSucursalModal);
   els.sucursalModalClose?.addEventListener("click", cerrarSucursalModal);

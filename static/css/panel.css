@@ -1,22 +1,42 @@
 /* Estilos del panel administrativo Django (login, dashboard, formularios). */
 
 *, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: system-ui, sans-serif; background: #f4f6f0; color: #222; }
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2d19;
+  background:
+    radial-gradient(ellipse 60% 40% at 0% 0%, #e9f1de 0%, transparent 70%),
+    linear-gradient(180deg, #f3f6ee 0%, #f7f8f4 40%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
 
-.btn { padding: .55rem 1.1rem; border: none; border-radius: 7px; font-size: .875rem; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-block; transition: opacity .15s, transform .1s; }
-.btn:hover { opacity: .88; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  padding: .55rem 1.1rem; border: none; border-radius: 10px;
+  font: inherit; font-size: .875rem; font-weight: 600; line-height: 1.2;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
 .btn:active { transform: scale(.97); }
-.btn-primary { background: #8DB33E; color: #fff; }
-.btn-secondary { background: #eee; color: #444; }
-.btn-danger { background: #e53e3e; color: #fff; }
-.btn-sm { padding: .3rem .65rem; font-size: .78rem; }
+.btn-primary { background: #4e7f22; color: #fff; box-shadow: 0 6px 16px rgba(78, 127, 34, .22); }
+.btn-primary:hover { background: #426d1c; }
+.btn-secondary, .btn-soft { background: #f1f2ee; color: #3f4a39; }
+.btn-secondary:hover, .btn-soft:hover { background: #e6e8e1; }
+.btn-danger { background: #d9453b; color: #fff; }
+.btn-danger:hover { background: #c23a31; }
+.btn-danger-soft { background: #fde9e7; color: #c8372d; }
+.btn-danger-soft:hover { background: #fbd9d5; }
+.btn-sm { padding: .42rem .8rem; font-size: .8rem; border-radius: 9px; }
+.btn-lg { padding: .8rem 1.4rem; font-size: 1rem; border-radius: 12px; }
 .btn-full { width: 100%; margin-top: .25rem; }
 
 /* Login */
 .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
 .login-card { background: #fff; border-radius: 14px; padding: 2.5rem 2rem; width: 100%; max-width: 380px; box-shadow: 0 6px 32px rgba(0,0,0,.1); }
 .login-logo { display: flex; align-items: center; gap: .6rem; margin-bottom: .3rem; }
-.login-logo .mark, .panel-brand .mark { width: 36px; height: 36px; background: #8DB33E; border-radius: 8px; color: #fff; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+.login-logo .mark, .panel-brand .mark { width: 36px; height: 36px; background: #5e8c2a; border-radius: 10px; color: #fff; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
 .login-logo strong { font-size: 1.2rem; }
 .login-logo small { color: #888; font-size: .8rem; display: block; }
 .login-card h1 { font-size: 1rem; color: #555; margin-bottom: 1.5rem; font-weight: 400; }
@@ -61,30 +81,53 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #f4f6f0; color
 
 /* Header del panel */
 .panel-header {
-  background: #fff; border-bottom: 1px solid #e8e8e8; padding: .8rem 1.5rem;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 1.5rem;
+  padding: .7rem 2.5rem;
+  background: rgba(255, 255, 255, .96);
+  border-bottom: 1px solid #eceee6;
+  box-shadow: 0 2px 14px rgba(40, 60, 25, .05);
 }
-.panel-brand { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1rem; }
-.panel-brand small { color: #888; font-size: .75rem; font-weight: 400; margin-left: .3rem; }
-.panel-nav { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
-.panel-nav form { margin: 0; }
-.panel-nav-link { color: #444; font-size: .95rem; font-weight: 600; text-decoration: none; background: none; border: none; padding: 0; }
-.panel-nav-link:hover { color: #8DB33E; }
+.panel-brand { display: flex; align-items: center; gap: .75rem; color: inherit; text-decoration: none; }
+.panel-brand .mark { width: 44px; height: 44px; border-radius: 12px; font-size: 1.3rem; box-shadow: 0 4px 12px rgba(94, 140, 42, .25); }
+.panel-brand strong { font-size: 1.2rem; letter-spacing: -.01em; }
+.panel-brand-user { padding-left: .75rem; border-left: 1px solid #d9ddd3; color: #7a8474; font-size: .92rem; }
+.panel-nav { display: flex; align-items: center; gap: .35rem; margin-left: auto; }
+.panel-nav-link {
+  display: inline-flex; align-items: center; gap: .5rem;
+  padding: .6rem 1rem; border-radius: 999px;
+  color: #3f4a39; font-size: .92rem; font-weight: 500; text-decoration: none;
+}
+.panel-nav-link svg { color: #5d6858; }
+.panel-nav-link:hover { color: #3f6d1f; }
+.panel-nav-link.is-active { background: #eaf1df; color: #3f6d1f; font-weight: 600; }
+.panel-nav-link.is-active svg { color: #3f6d1f; }
+.panel-header-right { display: flex; align-items: center; gap: .75rem; margin-left: 1rem; }
+.panel-header-right form { margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.sucursal-selector { margin: 0; }
+.sucursal-selector { position: relative; display: flex; align-items: center; margin: 0; }
+.sucursal-selector .sucursal-pin { position: absolute; left: .9rem; color: #3f6d1f; pointer-events: none; }
 .sucursal-selector select {
-  padding: .4rem .7rem; border: 1.5px solid #ddd; border-radius: 7px;
-  font-size: .85rem; font-weight: 600; color: #444; background: #fff; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  padding: .6rem 2.2rem .6rem 2.5rem; border: 0; border-radius: 999px;
+  font: inherit; font-size: .85rem; font-weight: 600; color: #1f2d19; cursor: pointer;
+  background: #f1f4ec url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5' fill='none' stroke='%231f2d19' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right .8rem center / 14px;
 }
-.sucursal-badge { font-size: .85rem; font-weight: 600; color: #4a7a10; background: #e8f0d5; padding: .3rem .7rem; border-radius: 20px; }
-.panel-greeting { margin: 0 0 1rem; color: #666; font-size: .95rem; }
+.sucursal-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .55rem 1rem; border-radius: 999px;
+  font-size: .85rem; font-weight: 600; color: #1f2d19; background: #f1f4ec;
+}
+.sucursal-badge svg { color: #3f6d1f; }
+.panel-user { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; color: #1f2d19; background: #f1f4ec; }
+.btn-logout { padding: .65rem 1.1rem; }
 .panel-main { padding: 1.5rem; max-width: 1140px; margin: 0 auto; }
 /* Modificador opcional (solo lo usa el dashboard de productos, ver panel_main_class). */
-.panel-main-wide { max-width: 1600px; padding: 2rem 3rem; }
+.panel-main-wide { max-width: 1600px; padding: 2.2rem 2.5rem 3rem; }
 
 /* Toolbar y tarjetas */
 .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: .75rem; }
+.toolbar h2 { margin: 0; font-size: 1.6rem; letter-spacing: -.01em; }
 .toolbar-right { display: flex; gap: .6rem; align-items: center; }
 /* margin-top/auto centra el card horizontalmente cuando su max-width (560px)
    es menor que el contenedor -- paginas standalone (categoria_form.html,
@@ -138,12 +181,12 @@ body { margin: 0; font-family: system-ui, sans-serif; background: #f4f6f0; color
    comparten el mismo text-align:center por default, asi que quedan
    alineados sin tener que pisar caso por caso. Los anchos de columna no
    cambian (el scroll horizontal, si hace falta, sigue igual). */
-.table-wrap { background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.07); overflow-x: auto; }
+.table-wrap { background: #fff; border: 1px solid #eceee6; border-radius: 16px; box-shadow: 0 8px 28px rgba(40, 60, 25, .06); overflow-x: auto; }
 table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: .875rem; }
-th { background: #f8f8f8; padding: .65rem 1rem; text-align: center; font-size: .75rem; color: #777; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #eee; white-space: nowrap; vertical-align: middle; }
-td { padding: .7rem 1rem; border-bottom: 1px solid #f0f0f0; vertical-align: middle; text-align: center; }
+th { background: #f8f9f6; padding: .95rem 1rem; text-align: center; font-size: .72rem; color: #5d6858; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #eee; white-space: nowrap; vertical-align: middle; }
+td { padding: .75rem 1rem; border-bottom: 1px solid #f0f2ec; vertical-align: middle; text-align: center; }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: #fafff4; }
+tr:hover td { background: #fbfdf8; }
 /* La celda queda como table-cell normal (sin display:flex en el <td>, eso
    es lo que rompia la alineacion de la fila). El flex va en un wrapper interno. */
 .td-actions { white-space: nowrap; }
@@ -155,7 +198,7 @@ tr:hover td { background: #fafff4; }
    clase en el template. */
 /* Imagen (thumb) es display:block de ancho fijo: text-align:center del td
    no la mueve por si sola, hace falta centrarla con margin auto. */
-.img-thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto; }
+.img-thumb { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; display: block; margin: 0 auto; }
 .no-img { width: 42px; height: 42px; border-radius: 6px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: .65rem; color: #bbb; margin: 0 auto; }
 .badge { display: inline-block; padding: .12rem .45rem; border-radius: 20px; font-size: .7rem; font-weight: 700; margin: .1rem .05rem; }
 .badge-best { background: #e8f0d5; color: #4a7a10; }
@@ -263,3 +306,100 @@ input.switch-input:checked { background: #8DB33E; }
 input.switch-input:checked::before { transform: translateX(18px); }
 input.switch-input:focus-visible { outline: 2px solid #8DB33E; outline-offset: 2px; }
 input.switch-input:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---- Vista de productos (dashboard) ---- */
+.page-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem;
+  margin-bottom: 1.6rem;
+}
+.page-eyebrow { margin: 0 0 .5rem; color: #6b7a62; font-size: .75rem; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; }
+.page-title { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; margin: 0 0 .35rem; font-size: 2.1rem; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.page-count { display: inline-grid; min-width: 46px; height: 40px; padding: 0 .7rem; place-items: center; border-radius: 999px; color: #3f6d1f; background: #e6efda; font-size: 1.15rem; font-weight: 700; letter-spacing: 0; }
+.page-subtitle { margin: 0; color: #5d6858; font-size: 1rem; }
+.page-head .btn-lg { margin-top: 1.4rem; }
+
+.table-filters { display: flex; flex-wrap: wrap; gap: .9rem; margin-bottom: 1.2rem; }
+.filter-search, .filter-select { position: relative; display: flex; align-items: center; }
+.filter-search { flex: 1 1 320px; max-width: 560px; }
+.filter-search-icon {
+  position: absolute; left: .55rem; display: grid; width: 34px; height: 34px; place-items: center;
+  border-radius: 9px; color: #1f2d19; background: #f1f4ec; pointer-events: none;
+}
+.filter-search input, .filter-select select {
+  width: 100%; min-height: 50px; border: 1px solid #e3e7de; border-radius: 12px;
+  font: inherit; font-size: .92rem; color: #1f2d19; background-color: #fff; outline: none;
+}
+.filter-search input { padding: .6rem 1rem .6rem 3.4rem; }
+.filter-search input:focus, .filter-select select:focus { border-color: #8DB33E; box-shadow: 0 0 0 4px rgba(141, 179, 62, .15); }
+.filter-select { flex: 0 1 240px; }
+.filter-select select {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  padding: .6rem 2.6rem .6rem 1.1rem;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5' fill='none' stroke='%231f2d19' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 1rem center / 16px;
+}
+.filter-sort { flex-basis: 220px; margin-left: auto; }
+.filter-sort svg { position: absolute; left: 1rem; color: #1f2d19; pointer-events: none; }
+.filter-sort select { padding-left: 2.7rem; }
+
+.products-table th.th-left, .products-table td.td-left { text-align: left; }
+.products-table td { padding-top: .6rem; padding-bottom: .6rem; }
+.products-table .img-thumb, .products-table .no-img { width: 58px; height: 46px; border-radius: 10px; background: #f1f3ee; }
+.td-name { font-weight: 700; font-size: .95rem; }
+.cat-pill {
+  display: inline-block; padding: .3rem .8rem; border-radius: 999px;
+  font-size: .8rem; color: #6d5b43; background: #f5ede1; white-space: nowrap;
+}
+.cat-pill[data-cat="Frutos secos"] { color: #3f6d1f; background: #e8f1dc; }
+.cat-pill[data-cat="Semillas"] { color: #4f6b1c; background: #eef3d8; }
+.cat-pill[data-cat="Suplementos"] { color: #28628a; background: #e3f0f8; }
+.cat-pill[data-cat="Sin TACC"] { color: #86661a; background: #fbf2d3; }
+.cat-pill[data-cat="Harinas"] { color: #7a5a37; background: #f3e8da; }
+.cat-pill[data-cat="Snacks saludables"] { color: #a2452a; background: #fde9e1; }
+.cat-pill[data-cat="Cremas"] { color: #6b4d9a; background: #efe8fa; }
+.products-table .price-col { font-weight: 500; font-size: .95rem; }
+.products-table .old-price { color: #9aa294; font-size: .8rem; }
+.stock-col { font-weight: 700; font-size: .95rem; }
+.stock-out { color: #d9453b; }
+.stock-low { color: #d97a1f; }
+.stock-ok { color: #3f6d1f; }
+.status { display: inline-block; padding: .3rem .8rem; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.status-out { color: #d9453b; background: #fde9e7; }
+.status-offer { color: #e0621c; background: #fdeee2; }
+.status-new { color: #2a67a8; background: #e4f0fb; }
+.status-ok { color: #3f7d22; background: #e7f2dc; }
+.products-table .td-actions-inner { justify-content: flex-start; gap: .6rem; }
+.products-table input.switch-input { width: 46px; min-width: 46px; height: 26px; background: #d5d9cf; }
+.products-table input.switch-input::before { width: 20px; height: 20px; top: 3px; left: 3px; }
+.products-table input.switch-input:checked { background: #5e9a2c; }
+.products-table input.switch-input:checked::before { transform: translateX(20px); }
+
+@media (max-width: 1100px) {
+  .panel-header { flex-wrap: wrap; padding: .7rem 1.25rem; }
+  .panel-nav { margin-left: 0; order: 3; width: 100%; overflow-x: auto; }
+  .panel-header-right { margin-left: auto; }
+  .panel-main-wide { padding: 1.5rem 1.25rem 2.5rem; }
+  .filter-sort { margin-left: 0; }
+}
+@media (max-width: 640px) {
+  .page-head { flex-direction: column; }
+  .page-head .btn-lg { margin-top: 0; }
+  .page-title { font-size: 1.6rem; }
+  .filter-search, .filter-select { flex: 1 1 100%; max-width: none; }
+  .panel-brand-user, .btn-logout span { display: none; }
+}
+
+/* Usuarios / Sucursales: el switch de activo vive dentro de la columna Estado. */
+.td-estado { white-space: nowrap; }
+.estado-switch { display: inline-flex; align-items: center; gap: .55rem; }
+.estado-texto { min-width: 4.2rem; text-align: left; color: #5d6858; font-size: .82rem; font-weight: 600; }
+.estado-switch .activo-form:has(input:checked) + .estado-texto { color: #3f7d22; }
+/* Tablas al lado de un formulario (usuarios/sucursales/categorias): sin
+   scroll horizontal; si no entran, los botones de accion bajan de linea. */
+.split-list table { min-width: 0; }
+.split-list .td-actions { white-space: normal; }
+.split-list .td-actions-inner { flex-wrap: wrap; }
+.split-form { flex-basis: 340px; min-width: 300px; }
+.split-list th, .split-list td { padding-left: .7rem; padding-right: .7rem; }
+.split-list th { white-space: normal; }
+.split-list .td-actions { white-space: nowrap; }
+.split-list .td-actions-inner { flex-wrap: nowrap; }

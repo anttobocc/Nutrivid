@@ -1,5 +1,5 @@
 {% extends "panel/base_panel.html" %}
-{% block title %}Sucursales | Panel Grandiet{% endblock %}
+{% block title %}Sucursales | Panel Nutrivid{% endblock %}
 {% block panel_main_class %}panel-main-wide{% endblock %}
 {% block panel_content %}
 <div class="toolbar">
@@ -11,7 +11,7 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Nombre</th><th>Dirección</th><th>Usuarios con acceso</th><th>Estado</th><th>Acciones</th><th>Activa</th></tr>
+          <tr><th>Nombre</th><th>Dirección</th><th>Usuarios con acceso</th><th>Estado</th><th>Acciones</th></tr>
         </thead>
         <tbody>
           {% for sucursal in sucursales %}
@@ -21,8 +21,21 @@
             <td>
               {% for u in sucursal.usuarios.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
             </td>
-            <td>
-              {% if sucursal.activo %}<span class="badge badge-best">activa</span>{% else %}<span class="badge badge-off">inactiva</span>{% endif %}
+            <td class="td-estado">
+              <div class="estado-switch">
+                <form method="post" action="{% url 'panel:sucursal_toggle_activo' sucursal.pk %}" class="activo-form">
+                  {% csrf_token %}
+                  <input
+                    type="checkbox"
+                    class="switch-input"
+                    name="activo"
+                    onchange="this.form.submit()"
+                    {% if sucursal.activo %}checked{% endif %}
+                    title="Sucursal activa"
+                    aria-label="Activar o desactivar {{ sucursal.nombre }}">
+                </form>
+                <span class="estado-texto">{% if sucursal.activo %}Activa{% else %}Inactiva{% endif %}</span>
+              </div>
             </td>
             <td class="td-actions">
               <div class="td-actions-inner">
@@ -31,22 +44,9 @@
                 <a class="btn btn-danger btn-sm" href="#borrar-sucursal-{{ sucursal.pk }}">Eliminar</a>
               </div>
             </td>
-            <td class="td-activo">
-              <form method="post" action="{% url 'panel:sucursal_toggle_activo' sucursal.pk %}" class="activo-form">
-                {% csrf_token %}
-                <input
-                  type="checkbox"
-                  class="switch-input"
-                  name="activo"
-                  onchange="this.form.submit()"
-                  {% if sucursal.activo %}checked{% endif %}
-                  title="Sucursal activa"
-                  aria-label="Activar o desactivar {{ sucursal.nombre }}">
-              </form>
-            </td>
           </tr>
           {% empty %}
-          <tr class="empty-row"><td colspan="6">No hay sucursales todavía.</td></tr>
+          <tr class="empty-row"><td colspan="5">No hay sucursales todavía.</td></tr>
           {% endfor %}
         </tbody>
       </table>
