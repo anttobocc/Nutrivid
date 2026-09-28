@@ -1,12 +1,12 @@
-# DietShop
+# Nutrivid
 
-DietShop es una tienda online desarrollada para una dietética, pensada para facilitar la consulta de productos y la realización de pedidos de forma rápida y sencilla.
+Es una tienda online desarrollada para una dietética, pensada para facilitar la consulta de productos y la realización de pedidos de forma rápida y sencilla.
 
 El proyecto está inspirado en una dietética real de la provincia de Corrientes, Argentina, que cuenta con varias sucursales pero no disponía de una página web propia. A partir de esta situación, se tomó como referencia su funcionamiento y organización para desarrollar una propuesta digital que permita centralizar y mejorar la experiencia de compra.
 
 ## ¿Para qué sirve?
 
-DietShop permite a los clientes consultar el catálogo de productos de la dietética, conocer su disponibilidad según la sucursal y armar un pedido de manera sencilla.
+Nutrivid permite a los clientes consultar el catálogo de productos de la dietética, conocer su disponibilidad según la sucursal y armar un pedido de manera sencilla.
 
 La aplicación también cuenta con un panel de administración destinado a la gestión de los productos, categorías, sucursales y usuarios.
 
