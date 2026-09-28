@@ -1,114 +1,175 @@
-# Nutrivid
+# 🥗 Nutrivid
 
-Es una tienda online desarrollada para una dietética, pensada para facilitar la consulta de productos y la realización de pedidos de forma rápida y sencilla.
+### Tienda Online para Dietética | Django · Python · JavaScript
 
-El proyecto está inspirado en una dietética real de la provincia de Corrientes, Argentina, que cuenta con varias sucursales pero no disponía de una página web propia. A partir de esta situación, se tomó como referencia su funcionamiento y organización para desarrollar una propuesta digital que permita centralizar y mejorar la experiencia de compra.
+---
 
-## ¿Para qué sirve?
+## 👩‍💻 About the Project
 
-Nutrivid permite a los clientes consultar el catálogo de productos de la dietética, conocer su disponibilidad según la sucursal y armar un pedido de manera sencilla.
+**Nutrivid** es una tienda online desarrollada para una dietética con múltiples sucursales, pensada para facilitar la consulta de productos y la realización de pedidos de forma rápida y sencilla.
 
-La aplicación también cuenta con un panel de administración destinado a la gestión de los productos, categorías, sucursales y usuarios.
+El proyecto surge a partir de una situación real de una dietética de la **provincia de Corrientes, Argentina**, que cuenta con varias sucursales pero no dispone de una página web propia.
 
-El objetivo principal es ofrecer una solución web que permita digitalizar parte de la gestión de la dietética y, al mismo tiempo, brindar a los clientes una forma más cómoda de consultar y solicitar productos.
+A partir de esta necesidad, se desarrolló una propuesta digital que busca centralizar la información de los productos, facilitar su consulta y mejorar la experiencia de compra de los clientes.
 
-## Funcionalidades principales
+---
 
-### Catálogo de productos
+## 🚀 Currently
 
-- Visualización de los productos disponibles.
+- 🛍️ Desarrollando una tienda online para una dietética.
+- 🏪 Trabajando con múltiples sucursales.
+- 📦 Implementando un catálogo de productos.
+- 🛒 Desarrollando el carrito de compras.
+- 📱 Integrando pedidos mediante WhatsApp.
+- ⚙️ Desarrollando un panel de administración.
+- 👥 Gestionando diferentes roles de usuario.
+- 🗄️ Trabajando con bases de datos.
+- 🎨 Mejorando continuamente la interfaz y experiencia de usuario.
+
+---
+
+## 🛠️ Languages and Tools
+
+### Languages
+
+![Python](https://skillicons.dev/icons?i=python,js)
+
+### Web Development
+
+![Web Development](https://skillicons.dev/icons?i=html,css,django)
+
+### Database
+
+![Database](https://skillicons.dev/icons?i=sqlite)
+
+### Tools
+
+![Tools](https://skillicons.dev/icons?i=git,github,vscode)
+
+---
+
+## 📋 Main Features
+
+### 🛍️ Product Catalog
+
+- Visualización del catálogo de productos.
 - Búsqueda de productos.
 - Filtrado por categorías.
-- Filtrado por ofertas, productos más vendidos y novedades.
-- Visualización del precio y descripción de cada producto.
-- Disponibilidad de productos según la sucursal seleccionada.
+- Productos en oferta.
+- Productos destacados.
+- Productos nuevos.
+- Productos más vendidos.
+- Visualización de precios y descripciones.
+- Consulta de disponibilidad según la sucursal.
 
-### Carrito de compras
+### 🛒 Shopping Cart
 
 - Agregar productos al carrito.
 - Modificar cantidades.
 - Eliminar productos.
-- Visualizar el total del pedido.
-- Mantener el pedido organizado antes de realizar la compra.
+- Visualizar los productos seleccionados.
+- Calcular el total del pedido.
+- Revisar el pedido antes de enviarlo.
 
-### Pedidos por WhatsApp
+### 📱 WhatsApp Orders
 
-El sistema permite preparar el pedido y enviarlo mediante WhatsApp, facilitando la comunicación entre el cliente y la dietética para coordinar la compra.
+El sistema permite preparar un pedido desde el carrito y enviarlo mediante **WhatsApp**.
 
-### Gestión de sucursales
+Esto facilita la comunicación entre el cliente y la dietética para coordinar la compra.
 
-El sistema contempla una dietética con múltiples sucursales.
+### 🏪 Branch Management
 
-Cada sucursal puede tener:
+Nutrivid está pensado para trabajar con una dietética que cuenta con múltiples sucursales.
 
-- Productos disponibles diferentes.
-- Stock independiente.
-- Categorías asociadas.
-- Estado de disponibilidad de los productos.
+Cada sucursal puede manejar información relacionada con:
 
-El usuario puede seleccionar la sucursal con la que desea trabajar para consultar su catálogo y disponibilidad.
+- Productos disponibles.
+- Stock.
+- Disponibilidad.
+- Categorías.
+- Ofertas.
+- Productos destacados.
 
-### Panel de administración
+### ⚙️ Administration Panel
 
-El sistema cuenta con un panel destinado a la administración de la tienda.
-
-Desde el panel se pueden gestionar:
+El sistema cuenta con un panel de administración para gestionar:
 
 - Productos.
 - Categorías.
 - Sucursales.
 - Usuarios.
 - Stock.
-- Disponibilidad de productos.
+- Disponibilidad.
 - Ofertas.
 - Productos destacados.
 - Productos nuevos.
 
-También permite administrar diferentes aspectos de cada sucursal de manera independiente.
+---
 
-## Roles de usuario
+## 👥 User Roles
 
-DietShop contempla diferentes niveles de acceso según el tipo de usuario.
+### 🔐 Administrator
 
-### Administrador
+Cuenta con acceso a las principales funcionalidades de administración del sistema.
 
-Cuenta con acceso a las funcionalidades de gestión del sistema, pudiendo administrar productos, categorías, sucursales, usuarios y stock.
+Puede gestionar productos, categorías, sucursales, usuarios y stock.
 
-### Usuario del panel
+### 👤 Panel User
 
-Puede acceder a las funcionalidades administrativas que correspondan según sus permisos y sucursales asignadas.
+Puede acceder a las funcionalidades administrativas correspondientes según sus permisos y sucursales asignadas.
 
-### Cliente
+### 🛍️ Customer
 
-Puede consultar el catálogo, seleccionar una sucursal, agregar productos al carrito y preparar un pedido para enviarlo por WhatsApp.
+Puede:
 
-## Tecnologías utilizadas
+- Consultar el catálogo.
+- Seleccionar una sucursal.
+- Buscar productos.
+- Filtrar productos.
+- Agregar productos al carrito.
+- Preparar un pedido.
+- Enviar el pedido mediante WhatsApp.
+
+---
+
+## 📚 Technologies
+
+### Backend
+
+- Python
+- Django
+
+### Frontend
 
 - HTML5
 - CSS3
 - JavaScript
-- Python
-- Django
+
+### Database
+
 - SQLite
+
+### Version Control
+
 - Git
 - GitHub
 
-## Estructura general
+---
 
-El proyecto se encuentra organizado separando las funcionalidades principales del sistema, incluyendo:
+## 📂 Project Structure
 
-- Catálogo y productos.
-- Gestión de categorías.
-- Gestión de sucursales.
-- Usuarios y permisos.
-- Panel de administración.
-- Carrito y pedidos.
-- Archivos estáticos y estilos.
+El proyecto se encuentra organizado separando las principales funcionalidades de la aplicación:
 
-## Objetivo del proyecto
-
-El objetivo de DietShop es desarrollar una solución web para una dietética con múltiples sucursales que actualmente no cuenta con una página propia.
-
-La propuesta busca mejorar la presencia digital del comercio y facilitar tanto la consulta de productos por parte de los clientes como la administración interna de la tienda.
-
-El proyecto toma como referencia una dietética real de la provincia de Corrientes para plantear una solución basada en una situación comercial concreta, adaptando sus necesidades a una aplicación web.
+```text
+Nutrivid/
+│
+├── catalogo/
+├── pedidos/
+├── panel/
+├── usuarios/
+│
+├── static/
+├── templates/
+│
+├── manage.py
+└── README.md
