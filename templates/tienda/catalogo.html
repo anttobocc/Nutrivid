@@ -1,50 +1,55 @@
 {% extends "tienda/base.html" %}
+{% load static tienda %}
 
 {% block title %}Catálogo | Nutrivid Corrientes{% endblock %}
-{% block description %}Catálogo de productos de Nutrivid Corrientes para armar tu pedido y enviarlo por WhatsApp.{% endblock %}
-{% block body_page %}catalog{% endblock %}
+{% block description %}Catálogo de Nutrivid Corrientes con precios y stock por sucursal. Armá tu pedido y envialo por WhatsApp.{% endblock %}
+{% block estilos %}
+    <link rel="stylesheet" href="{% static 'tienda/css/catalogo.css' %}">
+{% endblock %}
 
 {% block contenido %}
-  <section class="section-pad catalog-section" id="catalogo" aria-labelledby="catalogo-title">
-<div class="section-heading catalog-heading">
-  <div>
-    <p class="eyebrow">Compra rápida</p>
-    <h2 id="catalogo-title">Productos disponibles</h2>
-  </div>
-  <p id="catalogIntro">Precios estimados. Confirmamos stock y total final al recibir tu mensaje.</p>
-</div>
+<div class="catalogo contenedor">
+  <header class="catalogo__cabeza">
+    <h1>Catálogo</h1>
+    <p>Precios y stock de <b data-sucursal-nombre>tu sucursal</b>.</p>
+  </header>
 
-<div class="catalog-layout">
-  <aside class="filters" aria-label="Filtros de productos">
-    <label class="search-box" for="searchInput">
-      <span>Buscar producto</span>
-      <input id="searchInput" type="search" placeholder="Ej: almendras, chía…" autocomplete="off">
-    </label>
-    <div class="filter-group">
-      <span class="filter-label">Categorías</span>
-      <div class="filter-buttons" id="filterButtons" role="list"></div>
-    </div>
-    <div class="filter-group">
-      <span class="filter-label">Destacados</span>
-      <div class="filter-buttons" id="tagButtons" role="list"></div>
-    </div>
-  </aside>
+  <div class="catalogo__cuerpo">
+    <aside class="filtros" aria-label="Filtros">
+      <div class="buscador" role="search">
+        {% icono "magnifying-glass" %}
+        <label class="sr-only" for="buscar">Buscar productos</label>
+        <input id="buscar" type="search" placeholder="Buscar productos" autocomplete="off" enterkeyhint="search">
+      </div>
+      <div class="filtros__grupo">
+        <h2 class="filtros__titulo" id="tituloCategorias">Categoría</h2>
+        <div class="chips" id="chipsCategorias" role="group" aria-labelledby="tituloCategorias">
+          <button class="chip" type="button" aria-pressed="true">Todo</button>
+        </div>
+      </div>
+      <div class="filtros__grupo">
+        <h2 class="filtros__titulo" id="tituloMostrar">Mostrar</h2>
+        <div class="chips" id="chipsFiltros" role="group" aria-labelledby="tituloMostrar"></div>
+      </div>
+    </aside>
 
-  <div class="products-wrap">
-    <div class="catalog-status" aria-live="polite">
-      <span id="resultCount">Cargando…</span>
-      <button class="clear-filters" type="button" id="clearFilters">Limpiar filtros</button>
-    </div>
-    <div class="product-grid" id="productGrid">
-      <!-- Skeleton: reemplazado por renderProducts() al llegar /api/productos/. Reserva la altura real para que el footer no salte durante la carga. -->
-      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
-      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
-      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
-      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
-      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
-      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+    <div class="resultados">
+      <div class="resultados__barra">
+        <p class="resultados__conteo"><span id="conteo" aria-live="polite">Cargando productos…</span><button class="enlace" type="button" id="limpiarFiltros" hidden>Limpiar filtros</button></p>
+        <label class="orden" for="orden">Ordenar
+          <select class="selector" id="orden">
+            <option value="destacados">Destacados</option>
+            <option value="precio-asc">Menor precio</option>
+            <option value="precio-desc">Mayor precio</option>
+            <option value="nuevos">Novedades</option>
+            <option value="nombre">Nombre (A-Z)</option>
+          </select>
+        </label>
+      </div>
+      <div class="grilla-productos" id="gridCatalogo">
+        {% for _ in "12345678" %}{% include "tienda/parciales/_esqueleto_tarjeta.html" %}{% endfor %}
+      </div>
     </div>
   </div>
 </div>
-  </section>
 {% endblock %}

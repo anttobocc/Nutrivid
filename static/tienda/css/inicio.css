@@ -1,0 +1,99 @@
+/* Página de inicio: portada, rubros y pasos para pedir. */
+
+.portada {
+  display: grid;
+  gap: var(--e-5);
+  padding-block: var(--e-5) var(--e-4);
+}
+.portada__texto { display: grid; gap: var(--e-4); align-content: center; }
+.portada h1 {
+  font-size: clamp(2rem, 1.25rem + 2.6vw, 3.125rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--marca-texto);
+}
+.portada h1 em { font-style: normal; color: var(--acento-texto); }
+.portada__bajada { color: var(--tinta-2); font-size: var(--t-l); max-width: 44ch; }
+.portada .buscador .boton { min-height: 48px; padding-inline: var(--e-5); }
+@media (max-width: 420px) {
+  .portada .buscador .boton { padding-inline: var(--e-4); }
+}
+@media (min-width: 1024px) {
+  .portada {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: var(--e-7);
+    align-items: center;
+    padding-block: var(--e-7) var(--e-6);
+  }
+}
+
+/* Rubros: una fila deslizable en celular, siete columnas en escritorio */
+.rubros {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 104px;
+  gap: var(--e-3);
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-inline: calc(var(--e-4) * -1);
+  padding: 2px var(--e-4);
+}
+.rubros::-webkit-scrollbar { display: none; }
+.rubros li { display: grid; }
+.rubro {
+  display: grid;
+  justify-items: center;
+  gap: var(--e-2);
+  padding: var(--e-4) var(--e-2) var(--e-3);
+  border-radius: var(--r-caja);
+  background: var(--superficie);
+  border: 1px solid var(--linea);
+  text-align: center;
+  font-size: var(--t-s);
+  font-weight: 600;
+  line-height: 1.2;
+  transition: transform var(--d-presion) var(--ease-out), border-color var(--d-corta) ease;
+}
+.rubro:active { transform: scale(0.97); }
+.rubro > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-pildora);
+  background: var(--pozo);
+  color: var(--sobre-pozo);
+}
+.rubro .i { width: 24px; height: 24px; }
+.rubro--oferta > span:first-child { background: var(--acento); color: var(--sobre-acento); }
+@media (hover: hover) and (pointer: fine) {
+  .rubro:hover { border-color: var(--tinta-2); }
+}
+@media (min-width: 1024px) {
+  .rubros { grid-auto-flow: row; grid-template-columns: repeat(8, minmax(0, 1fr)); overflow: visible; margin-inline: 0; padding-inline: 0; }
+}
+
+/* Cómo pedir: bloque de marca con los tres pasos reales del pedido */
+.pasos { margin-top: var(--e-6); padding-block: var(--e-7); background: var(--marca); color: var(--sobre-marca); }
+.pasos h2 { font-size: var(--t-2xl); margin-bottom: var(--e-5); }
+.pasos ol { display: grid; gap: var(--e-5); counter-reset: paso; }
+.pasos li { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr; align-items: start; gap: 2px var(--e-4); counter-increment: paso; }
+.pasos li::before {
+  content: counter(paso);
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-pildora);
+  background: var(--sobre-marca);
+  color: var(--marca);
+  font: 800 1.125rem / 1 var(--f-titulos);
+}
+.pasos h3 { font-size: var(--t-l); padding-top: 9px; }
+.pasos p { color: color-mix(in oklab, var(--sobre-marca) 78%, transparent); max-width: 34ch; }
+@media (min-width: 768px) {
+  .pasos ol { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e-6); }
+}
+.pasos + .pie { margin-top: 0; border-top: 0; }

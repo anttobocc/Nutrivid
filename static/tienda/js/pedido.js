@@ -1,95 +1,198 @@
-// Vista del carrito (cajón) y armado del pedido por WhatsApp.
-import { carrito } from "./carrito.js";
+// Pedido: diálogo del carrito en tres pasos (armar, confirmar, listo), barra
+// fija en celular y contador de la cabecera. El pedido se envía abriendo
+// WhatsApp con el mensaje armado; no hay pagos ni backend de pedidos.
+import { carrito, datosPedido } from "./carrito.js";
 import { CONFIG } from "./config.js";
-import { buscarProducto } from "./estado.js";
-import { esc, money, productosLabel } from "./utils.js";
+import { buscarProducto, estado, estadoStock, nombreSucursal } from "./estado.js";
+import { imagenHTML } from "./tarjetas.js";
+import { abrirDialogo } from "./ui.js";
+import { enlaceWhatsapp, esc, icono, money, productosLabel, unidadesLabel } from "./utils.js";
 
+const $ = (id) => document.getElementById(id);
 const els = {
-  cartItems: document.querySelector("#cartItems"),
-  cartEmpty: document.querySelector("#cartEmpty"),
-  cartToolbar: document.querySelector("#cartToolbar"),
-  cartItemsLabel: document.querySelector("#cartItemsLabel"),
-  clearCart: document.querySelector("#clearCart"),
-  subtotalCount: document.querySelector("#subtotalCount"),
-  cartCount: document.querySelector("#cartCount"),
-  subtotal: document.querySelector("#subtotal"),
-  sendOrder: document.querySelector("#sendOrder"),
-  customerName: document.querySelector("#customerName"),
+  dialogo: $("dialogoCarrito"),
+  sub: $("carritoSub"),
+  vacio: $("carritoVacio"),
+  lineas: $("carritoLineas"),
+  form: $("formPedido"),
+  campoNombre: $("campoNombre"),
+  nombre: $("pedidoNombre"),
+  nombreError: $("pedidoNombreError"),
+  notas: $("pedidoNotas"),
+  mensaje: $("mensajePedido"),
+  pie: $("carritoPie"),
+  total: $("carritoTotal"),
+  volver: $("volverPedido"),
+  whatsapp: $("abrirWhatsapp"),
+  vaciar: $("vaciarPedido"),
+  contador: $("carritoContador"),
+  botonCarrito: $("abrirCarrito"),
+  barra: $("barraPedido"),
+  barraCantidad: $("barraCantidad"),
+  barraTotal: $("barraTotal"),
 };
 
-const TRASH_ICON = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+let paso = "armar";
 
-// El carrito guarda una copia del producto del momento en que se agregó.
-// Si el producto sigue en el catálogo actual, se usa su imagen vigente.
-function imagenItem(producto) {
-  return (buscarProducto(producto.id) || producto).image || "";
+// Cada ítem del carrito cruzado con el catálogo de la sucursal actual: el
+// precio y el stock vigentes mandan sobre la copia guardada.
+function lineasPedido() {
+  return carrito.items().map(({ product, quantity }) => {
+    const vigente = estado.catalogoCargado ? buscarProducto(product.id) : product;
+    const stock = vigente ? estadoStock(vigente) : null;
+    return {
+      producto: vigente || product,
+      cantidad: quantity,
+      disponible: Boolean(vigente && stock.disponible),
+      enCatalogo: Boolean(vigente),
+      maximo: stock?.maximo ?? 0,
+    };
+  });
 }
 
-export function renderCarrito() {
-  const items = carrito.items();
-  const totales = carrito.totales();
-  if (els.cartItems) {
-    els.cartItems.innerHTML = items.map(({ product, quantity }) => {
-      const nombre = esc(product.name);
-      return `
-      <div class="cart-item">
-        <img class="cart-thumb" src="${esc(imagenItem(product))}" alt="" loading="lazy">
-        <div class="cart-item-info">
-          <strong>${nombre}</strong>
-          <small>${money(product.price)}</small>
-        </div>
-        <div class="quantity" role="group" aria-label="Cantidad de ${nombre}">
-          <button type="button" data-decrease="${product.id}" aria-label="Restar ${nombre}">−</button>
-          <strong>${quantity}</strong>
-          <button type="button" data-increase="${product.id}" aria-label="Sumar ${nombre}">+</button>
-        </div>
-        <strong class="cart-line-total">${money(product.price * quantity)}</strong>
-        <button class="remove-item" type="button" data-remove="${product.id}" aria-label="Quitar ${nombre}">${TRASH_ICON}</button>
-      </div>`;
-    }).join("");
-  }
-  if (els.cartEmpty) els.cartEmpty.hidden = items.length > 0;
-  if (els.cartToolbar) els.cartToolbar.hidden = items.length === 0;
-  if (els.cartItemsLabel) els.cartItemsLabel.textContent = productosLabel(totales.cantidad);
-  if (els.subtotalCount) els.subtotalCount.textContent = productosLabel(totales.cantidad);
-  if (els.cartCount) els.cartCount.textContent = totales.cantidad;
-  if (els.subtotal) els.subtotal.textContent = money(totales.subtotal);
-  if (els.sendOrder) els.sendOrder.disabled = items.length === 0 || !CONFIG.whatsapp;
+function resumen(lineas = lineasPedido()) {
+  return lineas.filter((l) => l.disponible).reduce((acc, l) => {
+    acc.cantidad += Math.min(l.cantidad, l.maximo);
+    acc.total += Math.min(l.cantidad, l.maximo) * l.producto.price;
+    return acc;
+  }, { cantidad: 0, total: 0 });
 }
 
-export function mensajePedido({ nombre }) {
-  const totales = carrito.totales();
-  const lineas = carrito.items().map(({ product, quantity }) => `* ${product.name} x ${quantity}`);
+function lineaHTML(l) {
+  const p = l.producto;
+  const nombre = esc(p.name);
+  let avisoLinea = "";
+  if (!l.enCatalogo) avisoLinea = `No está en ${esc(nombreSucursal())}. No se incluye en el pedido.`;
+  else if (!l.disponible) avisoLinea = `Sin stock en ${esc(nombreSucursal())}. No se incluye en el pedido.`;
+  else if (l.cantidad > l.maximo) avisoLinea = `Hay ${unidadesLabel(l.maximo)} en ${esc(nombreSucursal())}. Pedimos esa cantidad.`;
+  const cantidad = l.disponible ? Math.min(l.cantidad, l.maximo) : l.cantidad;
+  return `
+    <li class="linea${l.disponible ? "" : " linea--no-disponible"}">
+      <div class="pozo">${imagenHTML(p)}</div>
+      <p class="linea__nombre">${nombre}</p>
+      <p class="linea__total">${l.disponible ? money(p.price * cantidad) : ""}</p>
+      <div class="linea__controles">
+        ${l.disponible ? `
+          <div class="cantidad" role="group" aria-label="Cantidad de ${nombre}">
+            <button type="button" data-restar="${p.id}" aria-label="${cantidad === 1 ? "Quitar" : "Restar uno de"} ${nombre}">${icono(cantidad === 1 ? "trash" : "minus")}</button>
+            <output>${cantidad}</output>
+            <button type="button" data-sumar="${p.id}" aria-label="Sumar uno de ${nombre}"${cantidad >= l.maximo ? " disabled" : ""}>${icono("plus")}</button>
+          </div>
+          <span class="linea__unitario">${money(p.price)} c/u</span>`
+          : `<button class="enlace" type="button" data-quitar="${p.id}">Quitar</button>`}
+      </div>
+      ${avisoLinea ? `<p class="linea__aviso">${icono("warning-circle")}${avisoLinea}</p>` : ""}
+    </li>`;
+}
+
+export function mensajePedido({ nombre, notas }, lineas = lineasPedido()) {
+  const incluidas = lineas.filter((l) => l.disponible);
+  const { total } = resumen(lineas);
+  const items = incluidas.map((l) => {
+    const cantidad = Math.min(l.cantidad, l.maximo);
+    return `• ${l.producto.name}, ${unidadesLabel(cantidad)}: ${money(l.producto.price * cantidad)}`;
+  });
   return [
-    "Hola Nutrivid Corrientes.",
+    `Hola Nutrivid, quiero hacer este pedido en ${nombreSucursal()}:`,
     "",
-    "Quisiera realizar el siguiente pedido:",
+    ...items,
     "",
-    ...lineas,
-    "",
-    `Total estimado: ${money(totales.subtotal)}`,
-    "",
-    `Mi nombre es: ${nombre}`,
+    `Total estimado: ${money(total)}`,
+    `Nombre: ${nombre}`,
+    ...(notas ? [`Notas: ${notas}`] : []),
   ].join("\n");
 }
 
-function enviarPedido() {
-  if (!carrito.size || !CONFIG.whatsapp) return;
-  const nombre = els.customerName?.value.trim() || "";
-  const texto = mensajePedido({ nombre });
-  window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+function irAPaso(nuevo) {
+  paso = nuevo;
+  els.dialogo.querySelectorAll("[data-paso]").forEach((s) => { s.hidden = s.dataset.paso !== paso; });
+  els.dialogo.querySelectorAll("[data-pie]").forEach((s) => { s.hidden = s.dataset.pie !== paso; });
+  els.dialogo.querySelector(".panel__cuerpo").scrollTop = 0;
+}
+
+function validarNombre() {
+  const valido = els.nombre.value.trim().length >= 2;
+  els.nombreError.hidden = valido;
+  els.campoNombre.classList.toggle("campo--error", !valido);
+  els.nombre.setAttribute("aria-invalid", String(!valido));
+  return valido;
+}
+
+function datos() {
+  return { nombre: els.nombre.value.trim(), notas: els.notas.value.trim() };
+}
+
+export function renderPedido() {
+  const lineas = lineasPedido();
+  const { cantidad, total } = resumen(lineas);
+  const hayItems = lineas.length > 0;
+  const hayIncluidos = lineas.some((l) => l.disponible);
+
+  // Contador y barra fija
+  els.contador.hidden = cantidad === 0;
+  els.contador.textContent = cantidad;
+  els.botonCarrito.setAttribute("aria-label", cantidad ? `Ver pedido, ${productosLabel(cantidad)}` : "Ver pedido");
+  els.barra.hidden = cantidad === 0;
+  document.documentElement.classList.toggle("con-barra", cantidad > 0);
+  els.barraCantidad.textContent = productosLabel(cantidad);
+  els.barraTotal.textContent = money(total);
+
+  // Diálogo
+  els.sub.textContent = estado.sucursalActual ? `En ${nombreSucursal()}` : "";
+  els.vacio.hidden = hayItems;
+  els.form.hidden = !hayIncluidos;
+  els.pie.hidden = !hayItems && paso !== "listo";
+  els.total.textContent = money(total);
+  els.lineas.innerHTML = lineas.map(lineaHTML).join("");
+  els.dialogo.querySelector('[data-pie="armar"] button').disabled = !hayIncluidos;
+  if (!hayItems && paso === "confirmar") irAPaso("armar");
+}
+
+function confirmar(event) {
+  event.preventDefault();
+  if (!validarNombre()) {
+    els.nombre.focus();
+    return;
+  }
+  datosPedido.guardar(datos());
+  const texto = mensajePedido(datos());
+  els.mensaje.textContent = texto;
+  if (CONFIG.whatsapp) {
+    els.whatsapp.href = enlaceWhatsapp(texto);
+    els.whatsapp.removeAttribute("aria-disabled");
+  } else {
+    els.whatsapp.removeAttribute("href");
+    els.whatsapp.setAttribute("aria-disabled", "true");
+  }
+  irAPaso("confirmar");
+}
+
+export function abrirPedido() {
+  if (paso !== "listo") irAPaso("armar");
+  renderPedido();
+  abrirDialogo(els.dialogo);
 }
 
 export function iniciarPedido() {
-  carrito.onChange(renderCarrito);
-  els.cartItems?.addEventListener("click", (event) => {
-    const sumar = event.target.closest("[data-increase]");
-    const restar = event.target.closest("[data-decrease]");
-    const quitar = event.target.closest("[data-remove]");
-    if (sumar) carrito.cambiarCantidad(sumar.dataset.increase, 1);
-    if (restar) carrito.cambiarCantidad(restar.dataset.decrease, -1);
-    if (quitar) carrito.quitar(quitar.dataset.remove);
+  const guardados = datosPedido.leer();
+  els.nombre.value = guardados.nombre;
+  els.notas.value = guardados.notas;
+
+  els.form.addEventListener("submit", confirmar);
+  els.nombre.addEventListener("input", () => {
+    if (!els.nombreError.hidden) validarNombre();
   });
-  els.clearCart?.addEventListener("click", () => carrito.vaciar());
-  els.sendOrder?.addEventListener("click", enviarPedido);
+  els.form.addEventListener("change", () => datosPedido.guardar(datos()));
+  els.volver.addEventListener("click", () => irAPaso("armar"));
+  els.whatsapp.addEventListener("click", () => {
+    if (els.whatsapp.hasAttribute("href")) irAPaso("listo");
+  });
+  els.vaciar.addEventListener("click", () => {
+    carrito.vaciar();
+    irAPaso("armar");
+  });
+  els.dialogo.addEventListener("close", () => {
+    if (paso === "listo") irAPaso("armar");
+  });
+  if (!CONFIG.whatsapp) console.warn("Falta WHATSAPP_NUMBER: no se pueden enviar pedidos.");
 }

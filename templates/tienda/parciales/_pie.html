@@ -1,0 +1,36 @@
+{% load tienda %}
+<footer class="pie">
+  <div class="contenedor">
+    <div class="pie__grilla">
+      <div class="pie__marca">
+        <a class="marca" href="{% url 'productos:home' %}" aria-label="Nutrivid, inicio">nutrivid<span aria-hidden="true">.</span></a>
+        <p>Dietética en Corrientes. Armá tu pedido acá y lo coordinamos por WhatsApp, con retiro en sucursal o envío.</p>
+      </div>
+      <nav aria-labelledby="pie-tienda">
+        <h2 id="pie-tienda">Tienda</h2>
+        <ul>
+          <li><a href="{% url 'productos:catalogo' %}">Catálogo</a></li>
+          <li><a href="{% url 'productos:catalogo' %}?filtro=ofertas">Ofertas</a></li>
+          <li><a href="{% url 'productos:catalogo' %}?filtro=nuevos">Novedades</a></li>
+        </ul>
+      </nav>
+      <div>
+        <h2>Sucursales</h2>
+        <ul id="pieSucursales"><li>Cargando…</li></ul>
+      </div>
+      <div>
+        <h2>Contacto</h2>
+        <ul>
+          {% if config_tienda.whatsapp %}
+            <li><a class="pie__whatsapp" href="https://wa.me/{{ config_tienda.whatsapp }}" target="_blank" rel="noopener">{% icono "whatsapp-logo" %}Escribinos por WhatsApp</a></li>
+          {% endif %}
+          <li>Lunes a sábado, de 9 a 20 h</li>
+        </ul>
+      </div>
+    </div>
+    <div class="pie__base">
+      <p>© 2026 Nutrivid</p>
+      <p>Diseño y desarrollo: <a href="https://github.com/anttobocc" target="_blank" rel="noopener">@anttobocc</a></p>
+    </div>
+  </div>
+</footer>

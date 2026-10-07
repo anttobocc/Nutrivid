@@ -2,24 +2,38 @@
 <html lang="es-AR">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}Nutrivid Corrientes{% endblock %}</title>
-    <meta name="description" content="{% block description %}Nutrivid Corrientes: productos de dietética, precios por sucursal y pedidos por WhatsApp.{% endblock %}">
-    <meta name="theme-color" content="#8DB33E">
-    <link rel="stylesheet" href="{% static 'tienda/css/tienda.css' %}">
+    <meta name="description" content="{% block description %}Nutrivid Corrientes: dietética con precios por sucursal y pedidos por WhatsApp.{% endblock %}">
+    <meta name="theme-color" content="#F1F2EC" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#13160F" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="{% static 'tienda/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="preload" href="{% static 'tienda/fonts/geist.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'tienda/fonts/bricolage-grotesque.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{% static 'tienda/css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/botones.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/formularios.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/layout.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/tarjetas.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/dialogos.css' %}">
+    {% block estilos %}{% endblock %}
   </head>
-  <body data-page="{% block body_page %}{% endblock %}">
-    <a class="skip-link" href="#contenido">Saltar al contenido principal</a>
+  <body data-pagina="{{ pagina }}">
+    <a class="salto" href="#contenido">Saltar al contenido</a>
 
-    {% include "tienda/parciales/_header.html" %}
+    {% include "tienda/parciales/_cabecera.html" %}
 
     <main id="contenido">
       {% block contenido %}{% endblock %}
     </main>
 
+    {% include "tienda/parciales/_pie.html" %}
+    {% include "tienda/parciales/_barra_pedido.html" %}
     {% include "tienda/parciales/_carrito.html" %}
+    {% include "tienda/parciales/_detalle.html" %}
     {% include "tienda/parciales/_sucursal.html" %}
-    {% include "tienda/parciales/_footer.html" %}
+    <div class="avisos" id="avisos" role="status" aria-live="polite"></div>
 
     {{ config_tienda|json_script:"config-tienda" }}
     <script type="module" src="{% static 'tienda/js/main.js' %}"></script>

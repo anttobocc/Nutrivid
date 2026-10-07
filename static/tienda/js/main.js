@@ -1,31 +1,48 @@
 // Punto de entrada de la tienda pública.
 import { cargarCatalogo } from "./api.js";
 import { cargarCarrito, carrito } from "./carrito.js";
-import { productoDePromo, urlDePromo, iniciarCarrusel } from "./carrusel.js";
-import { iniciarCatalogo, leerFiltrosURL, mostrarErrorCarga, renderFiltros, renderTodo, validarCategoria } from "./catalogo.js";
-import { buscarProducto, estado } from "./estado.js";
-import { iniciarPedido, renderCarrito } from "./pedido.js";
+import { actualizarPromos, iniciarCarrusel, renderCarrusel } from "./carrusel.js";
+import { iniciarCatalogo, leerFiltrosURL, mostrarErrorCarga, renderListados } from "./catalogo.js";
+import { abrirDetalle, abrirDetalleDesdeURL, iniciarDetalle } from "./detalle.js";
+import { buscarProducto, estado, estadoStock, nombreSucursal } from "./estado.js";
+import { abrirPedido, iniciarPedido, renderPedido } from "./pedido.js";
 import { iniciarSucursales, renderSucursales, resolverSucursal } from "./sucursales.js";
-import { abrirCarrito, iniciarUI } from "./ui.js";
+import { actualizarAcciones } from "./tarjetas.js";
+import { aviso, cerrarDialogo, iniciarUI } from "./ui.js";
 
-function agregarAlCarrito(producto) {
-  if (!producto) return;
-  carrito.agregar(producto);
-  abrirCarrito();
+// Suma o resta unidades respetando el stock de la sucursal.
+function cambiarCantidad(id, delta) {
+  const producto = buscarProducto(id);
+  if (!producto) {
+    if (delta < 0) carrito.quitar(id);
+    return;
+  }
+  const { maximo } = estadoStock(producto);
+  const nueva = Math.min(carrito.cantidad(id) + delta, maximo);
+  carrito.poner(producto, Math.max(nueva, 0));
 }
 
-function escucharBotonesAgregar() {
+function escucharAcciones() {
   document.addEventListener("click", (event) => {
-    const boton = event.target.closest("[data-add]");
-    if (boton) agregarAlCarrito(buscarProducto(boton.dataset.add));
+    const objetivo = event.target.closest("[data-agregar], [data-sumar], [data-restar], [data-quitar], [data-detalle], [data-abrir-carrito]");
+    if (!objetivo) return;
+    const { agregar, sumar, restar, quitar, detalle } = objetivo.dataset;
 
-    const promo = event.target.closest("[data-slide-add]");
-    if (promo) {
-      const indice = Number(promo.dataset.slideAdd);
-      const producto = productoDePromo(indice);
-      if (producto) agregarAlCarrito(producto);
-      else window.location.href = urlDePromo(indice);
+    if (detalle !== undefined) {
+      // Ctrl/Cmd + clic abre el link en otra pestaña, como cualquier enlace.
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+      if (abrirDetalle(detalle)) event.preventDefault();
+      return;
     }
+    if (objetivo.hasAttribute("data-abrir-carrito")) {
+      document.querySelectorAll("dialog[open]").forEach((d) => { if (d.id !== "dialogoCarrito") cerrarDialogo(d); });
+      abrirPedido();
+      return;
+    }
+    if (agregar !== undefined) cambiarCantidad(agregar, 1);
+    else if (sumar !== undefined) cambiarCantidad(sumar, 1);
+    else if (restar !== undefined) cambiarCantidad(restar, -1);
+    else if (quitar !== undefined) carrito.quitar(quitar);
   });
 }
 
@@ -33,6 +50,13 @@ async function cargarDatosSucursal() {
   const { productos, categorias } = await cargarCatalogo(estado.sucursalActual);
   estado.productos = productos;
   estado.categorias = categorias;
+  estado.catalogoCargado = true;
+}
+
+function renderTodo() {
+  renderListados();
+  renderCarrusel();
+  renderPedido();
 }
 
 async function alCambiarSucursal() {
@@ -43,9 +67,8 @@ async function alCambiarSucursal() {
     mostrarErrorCarga();
     return;
   }
-  validarCategoria();
   renderTodo();
-  renderCarrito();
+  aviso(`Ahora ves precios y stock de ${nombreSucursal()}.`, { icono: "storefront" });
 }
 
 async function init() {
@@ -53,14 +76,18 @@ async function init() {
   iniciarUI();
   iniciarPedido();
   iniciarCatalogo();
+  iniciarDetalle();
   iniciarCarrusel();
   iniciarSucursales({ onCambio: alCambiarSucursal });
-  escucharBotonesAgregar();
+  escucharAcciones();
+  carrito.onChange(() => {
+    actualizarAcciones();
+    actualizarPromos();
+    renderPedido();
+  });
 
-  // Lo que no depende del servidor se pinta ya.
   leerFiltrosURL();
-  renderFiltros();
-  renderCarrito();
+  renderPedido();
 
   try {
     await resolverSucursal();
@@ -76,13 +103,8 @@ async function init() {
     return;
   }
 
-  leerFiltrosURL({ conCategoria: true });
   renderTodo();
-  // Segundo render del carrito: ahora con las imágenes vigentes del catálogo.
-  renderCarrito();
-  if (window.location.hash === "#categorias") {
-    document.querySelector("#categorias")?.scrollIntoView({ behavior: "instant", block: "start" });
-  }
+  abrirDetalleDesdeURL();
 }
 
 init();

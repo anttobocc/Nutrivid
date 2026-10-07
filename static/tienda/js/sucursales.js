@@ -1,16 +1,15 @@
 // Selector de sucursal pública (independiente del login del panel).
 import { cargarSucursales } from "./api.js";
 import { SUCURSAL_KEY } from "./config.js";
-import { estado } from "./estado.js";
-import { esc, storage } from "./utils.js";
+import { estado, nombreSucursal } from "./estado.js";
+import { abrirDialogo, cerrarDialogo } from "./ui.js";
+import { esc, icono, storage } from "./utils.js";
 
 const els = {
-  trigger: document.querySelector("#sucursalTrigger"),
-  label: document.querySelector("#sucursalActualLabel"),
-  caret: document.querySelector(".sucursal-trigger-caret"),
-  modal: document.querySelector("#sucursalModal"),
-  cerrar: document.querySelector("#sucursalModalClose"),
-  lista: document.querySelector("#sucursalList"),
+  boton: document.getElementById("abrirSucursal"),
+  dialogo: document.getElementById("dialogoSucursal"),
+  lista: document.getElementById("listaSucursales"),
+  pie: document.getElementById("pieSucursales"),
 };
 
 export async function resolverSucursal() {
@@ -26,64 +25,44 @@ export async function resolverSucursal() {
   if (estado.sucursalActual) storage.set(SUCURSAL_KEY, String(estado.sucursalActual));
 }
 
-export function sucursalActual() {
-  return estado.sucursales.find((s) => s.id === estado.sucursalActual) || null;
-}
-
 export function renderSucursales() {
-  const actual = sucursalActual();
-  if (els.label) els.label.textContent = actual ? actual.name : "Sin sucursales disponibles";
+  const nombre = estado.sucursalActual ? nombreSucursal() : "Sin sucursales";
+  document.querySelectorAll("[data-sucursal-nombre]").forEach((el) => { el.textContent = nombre; });
 
-  // Con 0 o 1 sucursal no hay nada que elegir: el botón queda informativo.
-  const hayEleccion = estado.sucursales.length > 1;
-  if (els.trigger) {
-    els.trigger.disabled = !hayEleccion;
-    els.trigger.setAttribute("aria-haspopup", hayEleccion ? "dialog" : "false");
+  // Con una sola sucursal no hay nada que elegir: el botón queda informativo.
+  if (els.boton) {
+    els.boton.disabled = estado.sucursales.length < 2;
+    els.boton.setAttribute("aria-label", `Sucursal: ${nombre}${els.boton.disabled ? "" : ". Cambiar sucursal"}`);
   }
-  if (els.caret) els.caret.hidden = !hayEleccion;
 
-  if (!els.lista) return;
-  els.lista.innerHTML = estado.sucursales.length
-    ? estado.sucursales.map((s) => `
-        <li>
-          <button type="button" class="sucursal-option ${s.id === estado.sucursalActual ? "is-active" : ""}" data-sucursal-id="${s.id}">
-            <span>${esc(s.name)}</span>
-            <span class="check" aria-hidden="true">✓ Seleccionada</span>
-          </button>
-        </li>`).join("")
-    : '<li class="sucursal-modal-empty">No hay sucursales disponibles en este momento.</li>';
-}
-
-function abrir() {
-  if (!els.modal || els.trigger?.disabled) return;
-  els.modal.hidden = false;
-  els.trigger?.setAttribute("aria-expanded", "true");
-}
-
-function cerrar() {
-  if (!els.modal) return;
-  els.modal.hidden = true;
-  els.trigger?.setAttribute("aria-expanded", "false");
+  if (els.lista) {
+    els.lista.innerHTML = estado.sucursales.map((s) => `
+      <li>
+        <button class="opcion-sucursal" type="button" data-sucursal-id="${s.id}" aria-pressed="${s.id === estado.sucursalActual}">
+          ${icono("storefront")}
+          <span>${esc(s.name)}${s.address ? `<small>${esc(s.address)}</small>` : ""}</span>
+          ${icono("check", "i i--elegida")}
+        </button>
+      </li>`).join("");
+  }
+  if (els.pie) {
+    els.pie.innerHTML = estado.sucursales.length
+      ? estado.sucursales.map((s) => `<li>${esc(s.name)}${s.address ? `, ${esc(s.address)}` : ""}</li>`).join("")
+      : "<li>Sin sucursales disponibles</li>";
+  }
 }
 
 export function iniciarSucursales({ onCambio }) {
-  els.trigger?.addEventListener("click", abrir);
-  els.cerrar?.addEventListener("click", cerrar);
-  els.modal?.addEventListener("click", (event) => {
-    if (event.target === els.modal) cerrar();
-  });
+  els.boton?.addEventListener("click", () => abrirDialogo(els.dialogo));
   els.lista?.addEventListener("click", (event) => {
     const opcion = event.target.closest("[data-sucursal-id]");
     if (!opcion) return;
     const id = Number(opcion.dataset.sucursalId);
-    cerrar();
+    cerrarDialogo(els.dialogo);
     if (id === estado.sucursalActual) return;
     estado.sucursalActual = id;
     storage.set(SUCURSAL_KEY, String(id));
     renderSucursales();
     onCambio();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && els.modal && !els.modal.hidden) cerrar();
   });
 }

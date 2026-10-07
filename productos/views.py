@@ -22,13 +22,16 @@ def _config_tienda():
                 "sucursales": reverse("productos:api_sucursales"),
             },
         },
-        # Imágenes del carrusel (static/tienda/js/promos.js las referencia por clave).
+        "iconos": static("tienda/img/iconos.svg"),
+        # Fotos del carrusel (static/tienda/js/promos.js las referencia por clave).
         "imagenes": {
-            "colageno": static("tienda/img/promos/colageno-portada.jpg"),
-            "frutosSecos": static("tienda/img/productos/mix-premium-frutos-secos.jpg"),
-            "sinTacc": static("tienda/img/promos/productos-sin-tacc.jpg"),
-            "envios": static("tienda/img/promos/envios.jpg"),
-            "suplementos": static("tienda/img/promos/suplementos-deportivos.jpg"),
+            clave: static(f"tienda/img/productos/recortadas/{archivo}.webp")
+            for clave, archivo in (
+                ("colageno", "colageno-hidrolizado"),
+                ("frutosSecos", "mix-premium-frutos-secos"),
+                ("sinTacc", "premezcla-sintacc"),
+                ("proteina", "proteina-whey"),
+            )
         },
     }
 

@@ -1,0 +1,85 @@
+/* Campos de formulario y buscadores. */
+
+.campo { display: grid; gap: 6px; }
+.campo label { font-weight: 600; font-size: var(--t-s); }
+.campo label span { font-weight: 400; color: var(--tinta-2); }
+
+.control,
+.campo input,
+.campo textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 13px;
+  border: 1px solid var(--linea);
+  border-radius: var(--r-caja);
+  background: var(--superficie);
+  color: var(--tinta);
+  font-size: 1rem; /* 16px: evita el zoom automático en iOS */
+  line-height: 1.35;
+}
+.campo textarea { resize: vertical; min-height: 64px; }
+.control::placeholder,
+.campo input::placeholder,
+.campo textarea::placeholder { color: var(--tinta-2); opacity: 1; }
+.control:focus,
+.campo input:focus,
+.campo textarea:focus {
+  outline: 2px solid var(--foco);
+  outline-offset: 0;
+  border-color: transparent;
+}
+.campo--error input { border-color: var(--error); }
+.campo--error input:focus { outline-color: var(--error); }
+.campo__ayuda { font-size: var(--t-s); color: var(--tinta-2); }
+.campo__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--t-s);
+  font-weight: 500;
+  color: var(--error);
+}
+.campo__error .i { width: 16px; height: 16px; margin-top: 2px; }
+
+/* Buscador con ícono */
+.buscador { position: relative; display: flex; gap: var(--e-2); }
+.buscador > .i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  translate: 0 -50%;
+  width: 18px;
+  height: 18px;
+  color: var(--tinta-2);
+  pointer-events: none;
+}
+.buscador input {
+  flex: 1;
+  width: 100%; /* sin esto, el ancho natural del input ensancha su columna */
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--e-4) 0 44px;
+  border: 1px solid var(--linea);
+  border-radius: var(--r-pildora);
+  background: var(--superficie);
+  font-size: 1rem;
+}
+.buscador input::placeholder { color: var(--tinta-2); opacity: 1; }
+.buscador input:focus { outline: 2px solid var(--foco); outline-offset: 0; border-color: transparent; }
+.buscador input::-webkit-search-cancel-button { cursor: pointer; }
+
+/* Select nativo con la estética de los chips */
+.selector {
+  appearance: none;
+  min-height: 38px;
+  padding: 0 34px 0 var(--e-4);
+  border: 1px solid var(--linea);
+  border-radius: var(--r-pildora);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--tinta-2) 50%) calc(100% - 18px) 50% / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--tinta-2) 50%) calc(100% - 13px) 50% / 5px 5px no-repeat,
+    var(--superficie);
+  font-size: 1rem; /* 16px: iOS también hace zoom en select con letra más chica */
+  font-weight: 500;
+}
+.selector:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }

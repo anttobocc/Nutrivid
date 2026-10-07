@@ -1,0 +1,31 @@
+{% load tienda %}
+<header class="cabecera">
+  <div class="cabecera__fila contenedor">
+    <a class="marca" href="{% url 'productos:home' %}" aria-label="Nutrivid, inicio">nutrivid<span aria-hidden="true">.</span></a>
+
+    <nav class="nav" aria-label="Principal">
+      <a href="{% url 'productos:home' %}"{% if pagina == "inicio" %} aria-current="page"{% endif %}>Inicio</a>
+      <a href="{% url 'productos:catalogo' %}" data-nav="catalogo"{% if pagina == "catalogo" %} aria-current="page"{% endif %}>Catálogo</a>
+      <a href="{% url 'productos:catalogo' %}?filtro=ofertas" data-nav="ofertas"{% if pagina == "ofertas" %} aria-current="page"{% endif %}>Ofertas</a>
+    </nav>
+
+    {% if pagina == "inicio" %}
+      <form class="buscador cabecera__buscar" action="{% url 'productos:catalogo' %}" method="get" role="search">
+        {% icono "magnifying-glass" %}
+        <label class="sr-only" for="buscarCabecera">Buscar productos</label>
+        <input id="buscarCabecera" name="q" type="search" placeholder="Buscar productos" autocomplete="off" enterkeyhint="search">
+      </form>
+    {% endif %}
+
+    <button class="chip-sucursal" id="abrirSucursal" type="button" aria-haspopup="dialog" aria-controls="dialogoSucursal" disabled>
+      {% icono "map-pin" %}
+      <span class="chip-sucursal__texto"><small>Comprás en</small><b data-sucursal-nombre>Cargando…</b></span>
+      {% icono "caret-down" "i chip-sucursal__flecha" %}
+    </button>
+
+    <button class="boton-carrito" id="abrirCarrito" type="button" aria-haspopup="dialog" aria-controls="dialogoCarrito" aria-label="Ver pedido" data-abrir-carrito>
+      {% icono "shopping-cart-simple" %}
+      <span class="contador" id="carritoContador" aria-hidden="true" hidden>0</span>
+    </button>
+  </div>
+</header>

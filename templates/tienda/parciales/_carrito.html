@@ -1,41 +1,63 @@
-<aside class="cart-drawer" id="cartDrawer" aria-labelledby="cartTitle" aria-hidden="true">
-  <div class="drawer-backdrop" data-close-cart></div>
-  <div class="drawer-panel" role="dialog" aria-modal="true">
-    <div class="cart-header">
-      <div><p class="eyebrow">Tu pedido</p><h2 id="cartTitle">Carrito</h2></div>
-      <button class="icon-button" type="button" data-close-cart aria-label="Cerrar carrito"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+{% load tienda %}
+<dialog class="panel panel--lateral" id="dialogoCarrito" aria-labelledby="carritoTitulo">
+  <header class="panel__cabeza">
+    <div>
+      <h2 id="carritoTitulo">Tu pedido</h2>
+      <p class="panel__sub" id="carritoSub"></p>
     </div>
-    <div class="cart-scroll">
-      <div class="cart-items" id="cartItems" aria-live="polite"></div>
-      <div class="cart-empty" id="cartEmpty">
-        <strong>Tu carrito está vacío</strong>
-        <span>Agregá productos y enviá el pedido por WhatsApp.</span>
+    <button class="boton-icono" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
+  </header>
+
+  <div class="panel__cuerpo">
+    <section data-paso="armar">
+      <div class="vacio" id="carritoVacio">
+        {% icono "shopping-cart-simple" %}
+        <b>Todavía no sumaste productos</b>
+        <p>Elegí lo que necesitás del catálogo y armá el pedido acá.</p>
+        <a class="boton boton--marca" href="{% url 'productos:catalogo' %}">Ver catálogo</a>
       </div>
-      <div class="cart-toolbar" id="cartToolbar" hidden>
-        <button type="button" class="cart-clear" id="clearCart"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Vaciar carrito</button>
-        <span id="cartItemsLabel">0 productos</span>
-      </div>
-      <div class="cart-customer">
-        <h3>Tus datos</h3>
-        <p>Completá tu nombre para continuar con el pedido por WhatsApp.</p>
-        <label class="sr-only" for="customerName">Nombre y apellido</label>
-        <div class="input-with-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          <input id="customerName" type="text" placeholder="Nombre y apellido" autocomplete="name">
+      <ul class="lineas" id="carritoLineas"></ul>
+
+      <form class="datos-pedido" id="formPedido" novalidate hidden>
+        <div class="campo" id="campoNombre">
+          <label for="pedidoNombre">Tu nombre</label>
+          <input id="pedidoNombre" name="nombre" type="text" autocomplete="name" maxlength="80" required aria-describedby="pedidoNombreError">
+          <p class="campo__error" id="pedidoNombreError" hidden>{% icono "warning-circle" %}<span>Escribí tu nombre para saber a quién preparar el pedido.</span></p>
         </div>
-      </div>
-    </div>
-    <div class="cart-footer">
-      <div class="subtotal">
-        <div><strong>Subtotal</strong><span id="subtotalCount">0 productos</span></div>
-        <strong id="subtotal">$0</strong>
-      </div>
-      <button class="btn btn-primary btn-full cart-send" type="button" id="sendOrder">
-        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path d="M4 20l1.2-3.6A8 8 0 1 1 8 19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8.5c0 3.5 2.6 6.5 6.3 6.8l1-1.6-2-1-.9 1c-1.3-.5-2.4-1.6-2.9-2.9l1-.9-1-2-1.6 1" fill="currentColor"/></svg>
-        <span>Enviar pedido por WhatsApp</span>
-        <svg class="cart-send-arrow" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      <p class="cart-note"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5.5M12 7.6v.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Confirmamos stock, envío y total final por WhatsApp.</p>
-    </div>
+        <div class="campo">
+          <label for="pedidoNotas">Notas <span>(opcional)</span></label>
+          <textarea id="pedidoNotas" name="notas" rows="2" maxlength="300" aria-describedby="pedidoNotasAyuda"></textarea>
+          <p class="campo__ayuda" id="pedidoNotasAyuda">Horario de retiro, envío o lo que necesites aclarar.</p>
+        </div>
+      </form>
+    </section>
+
+    <section data-paso="confirmar" hidden aria-labelledby="confirmarTitulo">
+      <h3 id="confirmarTitulo" class="sr-only">Confirmá el pedido</h3>
+      <p>Revisá el mensaje. Se abre WhatsApp con este texto y lo enviás desde ahí.</p>
+      <pre class="mensaje" id="mensajePedido"></pre>
+    </section>
+
+    <section class="paso-listo" data-paso="listo" hidden>
+      {% icono "check-circle" %}
+      <h3>Abrimos WhatsApp con tu pedido</h3>
+      <p>Cuando lo envíes, te respondemos con el stock y el total. Si ya lo enviaste, podés vaciar el pedido.</p>
+    </section>
   </div>
-</aside>
+
+  <footer class="panel__pie" id="carritoPie" hidden>
+    <div class="total"><span>Total estimado</span><b id="carritoTotal">$ 0</b></div>
+    <div data-pie="armar">
+      <button class="boton boton--acento boton--ancho" type="submit" form="formPedido">Revisar pedido{% icono "arrow-right" %}</button>
+    </div>
+    <div class="panel__acciones" data-pie="confirmar" hidden>
+      <button class="boton boton--fantasma" type="button" id="volverPedido">{% icono "arrow-left" %}Volver</button>
+      <a class="boton boton--acento" id="abrirWhatsapp" href="#" target="_blank" rel="noopener">{% icono "whatsapp-logo" %}Abrir WhatsApp</a>
+    </div>
+    <div class="panel__acciones" data-pie="listo" hidden>
+      <button class="boton boton--fantasma" type="button" id="vaciarPedido">Vaciar pedido</button>
+      <button class="boton boton--marca" type="button" data-cerrar>Seguir comprando</button>
+    </div>
+    <p class="nota-pedido">{% icono "info" %}Los precios son estimados. Te confirmamos stock y total por WhatsApp.</p>
+  </footer>
+</dialog>

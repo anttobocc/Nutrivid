@@ -1,63 +1,68 @@
-// Comportamiento general de la interfaz: menú, cajón del carrito y estado
-// activo del menú cuando cambia el #hash en el inicio.
-const els = {
-  menuToggle: document.querySelector(".menu-toggle"),
-  navLinks: document.querySelector("#primary-menu"),
-  openCart: document.querySelector("#openCart"),
-  cartDrawer: document.querySelector("#cartDrawer"),
-};
+// Comportamiento general de la interfaz: diálogos y avisos.
+import { icono, movimientoReducido } from "./utils.js";
 
-export function abrirCarrito() {
-  if (!els.cartDrawer) return;
-  els.cartDrawer.classList.add("is-open");
-  els.cartDrawer.setAttribute("aria-hidden", "false");
-  els.openCart?.setAttribute("aria-expanded", "true");
-  document.body.classList.add("cart-open");
+const DURACION_CIERRE_MS = 200;
+const abiertos = new Set();
+
+function bloquearScroll() {
+  document.documentElement.classList.toggle("sin-scroll", abiertos.size > 0);
 }
 
-export function cerrarCarrito() {
-  if (!els.cartDrawer) return;
-  els.cartDrawer.classList.remove("is-open");
-  els.cartDrawer.setAttribute("aria-hidden", "true");
-  els.openCart?.setAttribute("aria-expanded", "false");
-  document.body.classList.remove("cart-open");
+// Los <dialog> nativos ya manejan el foco, Escape y la capa superior. Acá se
+// suma la animación de salida: se marca data-cerrando, se espera la
+// transición (definida en dialogos.css) y recién ahí se cierra.
+export function abrirDialogo(dialogo) {
+  if (!dialogo || dialogo.open) return;
+  delete dialogo.dataset.cerrando;
+  dialogo.showModal();
+  abiertos.add(dialogo);
+  bloquearScroll();
 }
 
-function cerrarMenu() {
-  els.navLinks?.classList.remove("is-open");
-  document.body.classList.remove("menu-open");
-  els.menuToggle?.setAttribute("aria-expanded", "false");
+export function cerrarDialogo(dialogo) {
+  if (!dialogo?.open || dialogo.dataset.cerrando !== undefined) return;
+  const terminar = () => {
+    dialogo.close();
+    delete dialogo.dataset.cerrando;
+  };
+  if (movimientoReducido()) {
+    terminar();
+    return;
+  }
+  dialogo.dataset.cerrando = "";
+  setTimeout(terminar, DURACION_CIERRE_MS);
 }
 
-// El servidor ya marca el ítem activo (aria-current) según la página. En el
-// inicio, "Categorías" es un ancla: se actualiza cuando cambia el hash.
-function resaltarAncla() {
-  if (document.body.dataset.page !== "home" || !els.navLinks) return;
-  const activo = window.location.hash === "#categorias" ? "categorias" : "inicio";
-  els.navLinks.querySelectorAll("a[data-nav]").forEach((link) => {
-    if (link.dataset.nav === activo) link.setAttribute("aria-current", "page");
-    else link.removeAttribute("aria-current");
+function prepararDialogo(dialogo) {
+  dialogo.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    cerrarDialogo(dialogo);
   });
+  dialogo.addEventListener("close", () => {
+    abiertos.delete(dialogo);
+    bloquearScroll();
+  });
+  // Clic en el velo (fuera del contenido) o en un botón [data-cerrar].
+  dialogo.addEventListener("click", (event) => {
+    if (event.target === dialogo || event.target.closest("[data-cerrar]")) cerrarDialogo(dialogo);
+  });
+}
+
+const avisos = document.getElementById("avisos");
+
+export function aviso(texto, { icono: nombreIcono = "info", duracion = 3200 } = {}) {
+  if (!avisos) return;
+  const el = document.createElement("div");
+  el.className = "aviso";
+  el.innerHTML = `${icono(nombreIcono)}<span></span>`;
+  el.querySelector("span").textContent = texto;
+  avisos.append(el);
+  setTimeout(() => {
+    el.dataset.saliendo = "";
+    setTimeout(() => el.remove(), DURACION_CIERRE_MS);
+  }, duracion);
 }
 
 export function iniciarUI() {
-  resaltarAncla();
-  window.addEventListener("hashchange", resaltarAncla);
-
-  els.menuToggle?.addEventListener("click", () => {
-    const abierto = els.navLinks.classList.toggle("is-open");
-    document.body.classList.toggle("menu-open", abierto);
-    els.menuToggle.setAttribute("aria-expanded", String(abierto));
-  });
-  els.navLinks?.addEventListener("click", (event) => {
-    if (event.target.closest("a")) cerrarMenu();
-  });
-
-  els.openCart?.addEventListener("click", abrirCarrito);
-  document.addEventListener("click", (event) => {
-    if (event.target.closest("[data-close-cart]")) cerrarCarrito();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") cerrarCarrito();
-  });
+  document.querySelectorAll("dialog.panel").forEach(prepararDialogo);
 }
