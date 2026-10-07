@@ -1,4 +1,4 @@
-# PROGRESS — Grandiet Demo
+# PROGRESS — Nutrivid
 
 Archivo de seguimiento de tareas. Actualizar a medida que se completen.
 

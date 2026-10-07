@@ -1,6 +1,6 @@
 // Estado del carrito, persistido en localStorage. No toca el DOM: las vistas
 // se suscriben con carrito.onChange().
-import { CART_KEY, DATOS_PEDIDO_KEY, LEGACY_CART_KEYS } from "./config.js";
+import { CART_KEY, DATOS_PEDIDO_KEY } from "./config.js";
 import { storage } from "./utils.js";
 
 const items = new Map();
@@ -25,14 +25,7 @@ function avisar() {
 }
 
 export function cargarCarrito() {
-  let guardado = leer(CART_KEY);
-  // Migración única desde la clave vieja ("grandiet-cart"): si el visitante
-  // tenía un carrito armado, lo conserva con la clave nueva.
-  for (const legacy of LEGACY_CART_KEYS) {
-    const viejo = leer(legacy);
-    if (!guardado.length && viejo.length) guardado = viejo;
-    storage.remove(legacy);
-  }
+  const guardado = leer(CART_KEY);
   items.clear();
   for (const [id, item] of guardado) {
     if (item?.product && item.quantity > 0) items.set(String(id), item);

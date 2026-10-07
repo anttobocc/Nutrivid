@@ -1,8 +1,8 @@
-# PRD — Grandiet Corrientes: Tienda Online de Alimentos Saludables
+# PRD — Nutrivid Corrientes: Tienda Online de Alimentos Saludables
 
 ## Resumen del Producto
 
-Grandiet Corrientes es una tienda online de alimentos saludables ubicada en Corrientes, Argentina. El sitio permite a los clientes explorar el catálogo de productos, filtrarlos por categoría, agregarlos al carrito y hacer el pedido directamente por WhatsApp. El foco es velocidad, simplicidad y conversión directa sin necesidad de gateway de pagos.
+Nutrivid Corrientes es una tienda online de alimentos saludables ubicada en Corrientes, Argentina. El sitio permite a los clientes explorar el catálogo de productos, filtrarlos por categoría, agregarlos al carrito y hacer el pedido directamente por WhatsApp. El foco es velocidad, simplicidad y conversión directa sin necesidad de gateway de pagos.
 
 **Stack actual:** HTML5 + CSS3 + Vanilla JavaScript (ES6+) + Django (backend, ORM, panel de administración) + SQLite + localStorage para carrito.
 

@@ -11,8 +11,6 @@ export const CONFIG = {
 };
 
 export const CART_KEY = "nutrivid-cart";
-// Claves usadas por versiones anteriores del sitio: se migran una sola vez.
-export const LEGACY_CART_KEYS = ["grandiet-cart"];
 // Nombre y notas del pedido, para no tener que escribirlos de nuevo.
 export const DATOS_PEDIDO_KEY = "nutrivid-pedido";
 export const SUCURSAL_KEY = "sucursalSeleccionada";
