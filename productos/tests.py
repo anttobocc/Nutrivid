@@ -82,3 +82,19 @@ class ImportarProductosTests(TestCase):
         producto = Producto.objects.get(nombre="Galletitas de arroz integral")
         self.assertEqual(producto.imagen.name, "productos/galletitas-de-arroz.webp")
         self.assertFalse(Producto.objects.exclude(imagen__endswith=".webp").exists())
+
+    def test_carga_stock_de_demo_solo_al_crear_el_inventario(self):
+        with tempfile.TemporaryDirectory() as media, self.settings(MEDIA_ROOT=media):
+            call_command("importar_productos", stdout=StringIO())
+            stocks = list(InventarioSucursal.objects.values_list("stock", flat=True))
+            self.assertEqual(sum(1 for s in stocks if s == 0), 3)
+            self.assertEqual(sum(1 for s in stocks if 1 <= s <= 5), 5)
+            self.assertEqual(sum(1 for s in stocks if s > 5), 20)
+
+            # Lo cargado desde el panel no se pisa en una segunda corrida.
+            inventario = InventarioSucursal.objects.first()
+            inventario.stock = 123
+            inventario.save()
+            call_command("importar_productos", stdout=StringIO())
+            inventario.refresh_from_db()
+            self.assertEqual(inventario.stock, 123)

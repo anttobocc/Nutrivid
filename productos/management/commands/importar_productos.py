@@ -12,7 +12,8 @@ Es seguro ejecutarlo varias veces:
   así que sus datos de catálogo (descripción, precio, imagen, tags, etc.) se
   vuelven a sincronizar con esta lista en cada corrida, sin duplicar filas.
 - InventarioSucursal usa get_or_create: el stock y la disponibilidad
-  SOLO se inicializan la primera vez. Si ya existe, no se pisan valores que
+  SOLO se inicializan la primera vez, con un stock de demostración (ver
+  stock_demo()) para que la tienda muestre todos los estados. Si ya existe, no se pisan valores que
   un administrador haya cargado desde el panel (igual que el comportamiento
   original, que nunca reescribía el stock en corridas posteriores).
 """
@@ -75,6 +76,21 @@ PRODUCTOS = [
 ]
 
 
+def stock_demo(posicion):
+    """
+    Stock inicial de demostración para el producto en esa posición de
+    PRODUCTOS. Es determinístico, así cada instalación ve lo mismo: la
+    mayoría con stock, algunos con últimas unidades (1 a 4) y algunos sin
+    stock. Con los 28 productos actuales quedan 20, 5 y 3.
+    """
+    resto = (posicion * 7) % 17
+    if resto in (0, 9):
+        return 0
+    if resto in (3, 5, 12):
+        return resto % 4 + 1
+    return 6 + resto * 2
+
+
 class Command(BaseCommand):
     help = "Importa las categorías y productos de script.js a Producto + InventarioSucursal (Sucursal Central)."
 
@@ -102,7 +118,7 @@ class Command(BaseCommand):
         imagenes_copiadas = 0
         imagenes_faltantes = []
 
-        for data in PRODUCTOS:
+        for posicion, data in enumerate(PRODUCTOS, 1):
             categoria = categorias_por_nombre[data["categoria"]]
 
             # Se prefiere la foto recortada (fondo transparente, WebP); si no
@@ -149,7 +165,7 @@ class Command(BaseCommand):
             _, inv_created = InventarioSucursal.objects.get_or_create(
                 producto=producto,
                 sucursal=central,
-                defaults={"categoria": categoria, "stock": 0, "disponible": True},
+                defaults={"categoria": categoria, "stock": stock_demo(posicion), "disponible": True},
             )
             inventarios_creados += inv_created
 
