@@ -1,0 +1,33 @@
+<header class="site-header">
+  <nav class="nav" aria-label="Navegación principal">
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-menu">
+      <span class="sr-only">Abrir menú</span><span></span><span></span><span></span>
+    </button>
+
+    <a class="brand" href="{% url 'productos:home' %}" aria-label="Nutrivid Corrientes, inicio">
+      <span class="brand-mark" aria-hidden="true">N</span>
+      <strong>Nutrivid</strong>
+    </a>
+
+    <div class="nav-links" id="primary-menu">
+      <a href="{% url 'productos:home' %}" data-nav="inicio"{% if pagina == "inicio" %} aria-current="page"{% endif %}>Inicio</a>
+      <a href="{% url 'productos:catalogo' %}" data-nav="catalogo"{% if pagina == "catalogo" %} aria-current="page"{% endif %}>Catálogo</a>
+      <a href="{% url 'productos:home' %}#categorias" data-nav="categorias"{% if pagina == "categorias" %} aria-current="page"{% endif %}>Categorías</a>
+      <a href="{% url 'productos:catalogo' %}?filtro=ofertas" data-nav="ofertas"{% if pagina == "ofertas" %} aria-current="page"{% endif %}>Ofertas</a>
+    </div>
+
+    <form class="header-search" action="{% url 'productos:catalogo' %}" method="get" role="search">
+      <label class="sr-only" for="headerSearch">Buscar productos</label>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <input id="headerSearch" name="q" type="search" placeholder="Buscar productos…" autocomplete="off">
+    </form>
+
+    <button type="button" class="sucursal-trigger" id="sucursalTrigger" aria-haspopup="dialog" aria-controls="sucursalModal">
+      <svg class="sucursal-pin" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg><span id="sucursalActualLabel">Cargando…</span><span class="sucursal-trigger-caret" aria-hidden="true" hidden>▾</span>
+    </button>
+
+    <button class="cart-button" type="button" id="openCart" aria-controls="cartDrawer" aria-expanded="false">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M3 4h2l2.4 10.2a1.5 1.5 0 0 0 1.5 1.1h8.4a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="19.5" r="1.4" fill="currentColor"/><circle cx="17" cy="19.5" r="1.4" fill="currentColor"/></svg><span class="sr-only">Carrito</span><span id="cartCount">0</span>
+    </button>
+  </nav>
+</header>

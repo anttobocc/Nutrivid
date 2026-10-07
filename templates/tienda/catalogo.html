@@ -1,0 +1,50 @@
+{% extends "tienda/base.html" %}
+
+{% block title %}Catálogo | Nutrivid Corrientes{% endblock %}
+{% block description %}Catálogo de productos de Nutrivid Corrientes para armar tu pedido y enviarlo por WhatsApp.{% endblock %}
+{% block body_page %}catalog{% endblock %}
+
+{% block contenido %}
+  <section class="section-pad catalog-section" id="catalogo" aria-labelledby="catalogo-title">
+<div class="section-heading catalog-heading">
+  <div>
+    <p class="eyebrow">Compra rápida</p>
+    <h2 id="catalogo-title">Productos disponibles</h2>
+  </div>
+  <p id="catalogIntro">Precios estimados. Confirmamos stock y total final al recibir tu mensaje.</p>
+</div>
+
+<div class="catalog-layout">
+  <aside class="filters" aria-label="Filtros de productos">
+    <label class="search-box" for="searchInput">
+      <span>Buscar producto</span>
+      <input id="searchInput" type="search" placeholder="Ej: almendras, chía…" autocomplete="off">
+    </label>
+    <div class="filter-group">
+      <span class="filter-label">Categorías</span>
+      <div class="filter-buttons" id="filterButtons" role="list"></div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Destacados</span>
+      <div class="filter-buttons" id="tagButtons" role="list"></div>
+    </div>
+  </aside>
+
+  <div class="products-wrap">
+    <div class="catalog-status" aria-live="polite">
+      <span id="resultCount">Cargando…</span>
+      <button class="clear-filters" type="button" id="clearFilters">Limpiar filtros</button>
+    </div>
+    <div class="product-grid" id="productGrid">
+      <!-- Skeleton: reemplazado por renderProducts() al llegar /api/productos/. Reserva la altura real para que el footer no salte durante la carga. -->
+      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+      <article class="product-card skeleton-card" aria-hidden="true"><div class="skeleton-image"></div><div class="product-body"><div class="product-meta"><span class="skeleton-chip"></span><span class="skeleton-chip"></span></div><div class="skeleton-line" style="width:75%"></div><p></p><button class="add-btn" type="button" disabled tabindex="-1"></button></div></article>
+    </div>
+  </div>
+</div>
+  </section>
+{% endblock %}

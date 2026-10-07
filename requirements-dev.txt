@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# Solo para herramientas/recortar_fondos.py (no hace falta en el servidor)
+rembg[cpu]==2.0.85

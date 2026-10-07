@@ -1,27 +1,46 @@
-from pathlib import Path
-
 from django.conf import settings
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.templatetags.static import static
+from django.urls import reverse
 
 from sucursales.models import Sucursal
 
 from .models import Categoria, InventarioSucursal
 
 
+def _config_tienda():
+    """Datos que el JS de la tienda lee del template (via json_script)."""
+    return {
+        "whatsapp": settings.WHATSAPP_NUMBER,
+        "urls": {
+            "inicio": reverse("productos:home"),
+            "catalogo": reverse("productos:catalogo"),
+            "api": {
+                "productos": reverse("productos:api_productos"),
+                "categorias": reverse("productos:api_categorias"),
+                "sucursales": reverse("productos:api_sucursales"),
+            },
+        },
+        # Imágenes del carrusel (static/tienda/js/promos.js las referencia por clave).
+        "imagenes": {
+            "colageno": static("tienda/img/promos/colageno-portada.jpg"),
+            "frutosSecos": static("tienda/img/productos/mix-premium-frutos-secos.jpg"),
+            "sinTacc": static("tienda/img/promos/productos-sin-tacc.jpg"),
+            "envios": static("tienda/img/promos/envios.jpg"),
+            "suplementos": static("tienda/img/promos/suplementos-deportivos.jpg"),
+        },
+    }
+
+
 def home(request):
-    """Sirve index.html tal cual está en disco (bytes exactos, sin normalizar saltos de linea)."""
-    html = (Path(settings.BASE_DIR) / "index.html").read_bytes()
-    response = HttpResponse(html, content_type="text/html; charset=utf-8")
-    response["Cache-Control"] = "no-store"
-    return response
+    return render(request, "tienda/inicio.html", {"pagina": "inicio", "config_tienda": _config_tienda()})
 
 
 def catalogo(request):
-    """Sirve catalogo.html tal cual está en disco (bytes exactos, sin normalizar saltos de linea)."""
-    html = (Path(settings.BASE_DIR) / "catalogo.html").read_bytes()
-    response = HttpResponse(html, content_type="text/html; charset=utf-8")
-    response["Cache-Control"] = "no-store"
-    return response
+    filtro = request.GET.get("filtro") or request.GET.get("tag")
+    pagina = "ofertas" if filtro in ("ofertas", "offer") else "catalogo"
+    return render(request, "tienda/catalogo.html", {"pagina": pagina, "config_tienda": _config_tienda()})
 
 
 def _resolver_sucursal_publica(request):

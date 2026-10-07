@@ -96,6 +96,6 @@ Grandiet Corrientes es una tienda online de alimentos saludables ubicada en Corr
 
 ## Notas Técnicas
 
-- El número de WhatsApp hardcodeado es `+54 9 379 400-0000` — debe moverse a config
+- El número de WhatsApp se configura con la variable de entorno `WHATSAPP_NUMBER` (ver `.env.example`).
 - Firebase (Auth + Firestore) fue usado en una etapa anterior del proyecto y ya fue eliminado del repositorio (`firebase.js` y `admin.html` no existen más). El catálogo público y el panel de administración funcionan exclusivamente con Django.
 - No hay proceso de build — considerar Vite o simplemente módulos ES nativos

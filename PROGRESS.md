@@ -9,7 +9,7 @@ Archivo de seguimiento de tareas. Actualizar a medida que se completen.
 - [x] Exploración inicial del proyecto y análisis de código
 - [x] Creación del PRD con objetivos y prioridades
 - [x] Creación de este archivo de progreso
-- [x] Cambio de número WhatsApp a +54 9 379 475-7727 en script.js, index.html y catalogo.html
+- [x] Número de WhatsApp movido a la variable de entorno WHATSAPP_NUMBER (ver .env.example)
 - [x] Firebase Auth y Firestore habilitados en consola Firebase
 - [x] Actualizar firebase.js con Auth + operaciones de escritura (addDoc, updateDoc, deleteDoc)
 - [x] Conectar script.js a Firestore — productos se cargan dinámicamente (eliminado array hardcodeado)

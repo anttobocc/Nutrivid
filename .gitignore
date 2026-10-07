@@ -27,3 +27,9 @@ staticfiles/
 
 # Capturas de Playwright
 .playwright-mcp/
+
+# Copias locales de la base
+db.sqlite3.backup-*
+
+# Salida de herramientas/recortar_fondos.py (se revisa antes de usarla)
+herramientas/recortes/

@@ -60,7 +60,7 @@ button { cursor: pointer; }
 .nav {
   min-height: var(--header-height);
   display: grid;
-  grid-template-columns: auto auto 1fr auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) minmax(0, auto) auto;
   align-items: center;
   gap: .75rem;
   max-width: 1220px;
@@ -108,6 +108,7 @@ button { cursor: pointer; }
   align-items: center;
   gap: .4rem;
   max-width: 150px;
+  min-width: 0;
   margin-right: .5rem;
   border: 0;
   padding: 0;
@@ -716,6 +717,7 @@ h3 { margin-bottom: .4rem; }
 .catalog-heading p { color: var(--muted); }
 .catalog-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 .filters {

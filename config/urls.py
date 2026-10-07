@@ -33,12 +33,3 @@ urlpatterns = [
     re_path(r'^media/(?P<path>.*)$', _serve_media, {'document_root': settings.MEDIA_ROOT}),
 ]
 
-if settings.DEBUG:
-    # TEMPORAL (Fase 0 del rediseño): el frontend viejo todavía vive en la
-    # raíz del proyecto. En la Fase 1 se mueve a templates/ y static/ y
-    # estas rutas se eliminan.
-    urlpatterns += [
-        path('script.js', serve_static, {'document_root': settings.BASE_DIR, 'path': 'script.js'}),
-        path('styles.css', serve_static, {'document_root': settings.BASE_DIR, 'path': 'styles.css'}),
-        re_path(r'^assets/(?P<path>.*)$', serve_static, {'document_root': settings.BASE_DIR / 'assets'}),
-    ]
