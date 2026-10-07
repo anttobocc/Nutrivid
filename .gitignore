@@ -21,3 +21,9 @@ db.sqlite3
 .idea/
 .DS_Store
 Thumbs.db
+
+# collectstatic
+staticfiles/
+
+# Capturas de Playwright
+.playwright-mcp/
