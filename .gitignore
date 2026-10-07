@@ -33,3 +33,6 @@ db.sqlite3.backup-*
 
 # Salida de herramientas/recortar_fondos.py (se revisa antes de usarla)
 herramientas/recortes/
+
+# Fotos subidas desde el panel y copiadas por importar_productos (se regeneran)
+media/

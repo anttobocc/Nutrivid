@@ -16,10 +16,12 @@ Grandiet Corrientes es una tienda online de alimentos saludables ubicada en Corr
 - Carrito funcional con persistencia en localStorage
 - Integración con WhatsApp para hacer pedidos
 - Carousel de promociones en la home
-- Filtros por categoría, tag y búsqueda en el catálogo
+- Filtros por categoría, oferta, destacados, novedades y stock; búsqueda sin tildes; ordenamiento
+- Detalle de producto, indicador de stock por sucursal, notas y confirmación del pedido antes de abrir WhatsApp
+- Frontend en templates de Django y módulos ES; diseño propio (dirección "Granel")
+- Configuración (clave, DEBUG, hosts, número de WhatsApp) desde variables de entorno
 - Panel de administración propio en `/panel/` (login con Django Authentication, dashboard, CRUD de productos y categorías, activar/desactivar productos)
-- Sin validación de formularios
-- Sin documentación
+- README con instalación, producción y herramientas
 
 ---
 
@@ -63,18 +65,18 @@ Grandiet Corrientes es una tienda online de alimentos saludables ubicada en Corr
 ### Must Have (crítico)
 - [x] Integrar productos con Django ORM/SQLite (eliminar hardcode) — completado, reemplaza el plan original de Firestore
 - [x] Panel de administración básico (CRUD de productos) — completado en `/panel/` con Django
-- [ ] Validación del nombre del cliente antes de enviar pedido
-- [ ] Archivo de configuración del negocio (teléfono, horarios)
-- [ ] Modularizar el JavaScript
+- [x] Validación del nombre del cliente antes de enviar pedido
+- [x] Configuración del negocio: el número de WhatsApp sale de `WHATSAPP_NUMBER` (los horarios siguen en el pie de la tienda)
+- [x] Modularizar el JavaScript (módulos ES en `static/tienda/js/`)
 
 ### Should Have (importante)
-- [ ] Página/modal de detalle de producto
-- [ ] Indicador de stock
-- [ ] Optimización de imágenes (WebP)
-- [ ] Campo de notas en el pedido
+- [x] Página/modal de detalle de producto
+- [x] Indicador de stock según la sucursal
+- [x] Optimización de imágenes (WebP)
+- [x] Campo de notas en el pedido
 
 ### Could Have (deseable)
-- [ ] Ordenamiento del catálogo
+- [x] Ordenamiento del catálogo (popularidad se reemplazó por "Destacados": no hay datos de ventas)
 - [ ] Service Worker / PWA
 - [ ] Analítica básica (Firebase Analytics)
 
