@@ -1,6 +1,11 @@
+from io import BytesIO
+from pathlib import Path
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image, ImageOps
 
 from productos.models import Categoria, InventarioSucursal, Producto
 from sucursales.models import Sucursal
@@ -51,6 +56,27 @@ class ProductoGlobalForm(forms.ModelForm):
         }
 
     CAMPOS_SOLO_PRECIO = ("precio", "precio_anterior")
+
+    # Las fotos nuevas se guardan en WebP: pesan bastante menos que JPG/PNG y
+    # conservan la transparencia de las fotos recortadas.
+    IMAGEN_LADO_MAXIMO = 1200
+
+    def clean_imagen(self):
+        imagen = self.cleaned_data.get("imagen")
+        # Sin archivo nuevo, Django devuelve el actual (FieldFile): se deja igual.
+        if not imagen or not hasattr(imagen, "content_type"):
+            return imagen
+        try:
+            foto = Image.open(imagen)
+            foto = ImageOps.exif_transpose(foto)
+            foto.thumbnail((self.IMAGEN_LADO_MAXIMO, self.IMAGEN_LADO_MAXIMO))
+            foto = foto.convert("RGBA" if "A" in foto.getbands() or foto.mode == "P" else "RGB")
+            salida = BytesIO()
+            foto.save(salida, "WEBP", quality=80, method=6)
+        except Exception:
+            raise forms.ValidationError("No se pudo procesar la imagen. Probá con una foto JPG, PNG o WebP.")
+        nombre = f"{Path(imagen.name).stem}.webp"
+        return SimpleUploadedFile(nombre, salida.getvalue(), content_type="image/webp")
 
     def __init__(self, *args, solo_precio=False, **kwargs):
         super().__init__(*args, **kwargs)

@@ -38,7 +38,8 @@ CATEGORIAS = [
 ]
 
 # Igual a `products` en el script.js original. `imagen` es el nombre de
-# archivo dentro de static/tienda/img/productos/ (fotos originales). `tags` reproduce el array
+# archivo dentro de static/tienda/img/productos/ (fotos originales). Si existe
+# una versión recortada en recortadas/<nombre>.webp, se usa esa. `tags` reproduce el array
 # `tags` original; "offer" se agrega también cuando el producto tiene
 # `oldPrice`, tal como hace badgeMarkup() en script.js. `categoria` indica
 # a qué InventarioSucursal (en Sucursal Central) pertenece el producto.
@@ -81,6 +82,7 @@ class Command(BaseCommand):
         central, _ = Sucursal.objects.get_or_create(nombre="Sucursal Central", defaults={"activo": True})
 
         assets_dir = Path(settings.BASE_DIR) / "static" / "tienda" / "img" / "productos"
+        recortadas_dir = assets_dir / "recortadas"
         media_productos_dir = Path(settings.MEDIA_ROOT) / "productos"
         media_productos_dir.mkdir(parents=True, exist_ok=True)
 
@@ -103,13 +105,16 @@ class Command(BaseCommand):
         for data in PRODUCTOS:
             categoria = categorias_por_nombre[data["categoria"]]
 
+            # Se prefiere la foto recortada (fondo transparente, WebP); si no
+            # existe, se usa la original.
             imagen_rel = None
-            origen = assets_dir / data["imagen"]
+            recortada = recortadas_dir / f"{Path(data['imagen']).stem}.webp"
+            origen = recortada if recortada.exists() else assets_dir / data["imagen"]
             if origen.exists():
-                destino = media_productos_dir / data["imagen"]
+                destino = media_productos_dir / origen.name
                 shutil.copyfile(origen, destino)
                 imagenes_copiadas += 1
-                imagen_rel = f"productos/{data['imagen']}"
+                imagen_rel = f"productos/{origen.name}"
             else:
                 imagenes_faltantes.append((data["nombre"], data["imagen"]))
 

@@ -1,3 +1,7 @@
+import tempfile
+from io import StringIO
+
+from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
@@ -69,3 +73,12 @@ class ApiProductosTests(TestCase):
         )
         self.assertEqual(producto["stock"], 3)
         self.assertTrue(producto["oferta"])
+
+
+class ImportarProductosTests(TestCase):
+    def test_usa_las_fotos_recortadas_en_webp(self):
+        with tempfile.TemporaryDirectory() as media, self.settings(MEDIA_ROOT=media):
+            call_command("importar_productos", stdout=StringIO())
+        producto = Producto.objects.get(nombre="Galletitas de arroz integral")
+        self.assertEqual(producto.imagen.name, "productos/galletitas-de-arroz.webp")
+        self.assertFalse(Producto.objects.exclude(imagen__endswith=".webp").exists())
