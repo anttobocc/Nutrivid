@@ -1,11 +1,8 @@
 {% extends "panel/base_panel.html" %}
 {% block title %}Editar categoría | Panel Nutrivid{% endblock %}
 {% block panel_content %}
-<div class="panel-card">
-  <h2>Editar categoría</h2>
-  {% url 'panel:categorias' as cancelar_href %}
-  <form method="post">
-    {% include "panel/_categoria_form_fields.html" %}
-  </form>
-</div>
+{% url 'panel:categorias' as volver_url %}
+<form class="tarjeta pagina-form" method="post" novalidate>
+  {% include "panel/_categoria_form_fields.html" %}
+</form>
 {% endblock %}

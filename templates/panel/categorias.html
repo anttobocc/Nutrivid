@@ -1,96 +1,85 @@
 {% extends "panel/base_panel.html" %}
+{% load tienda %}
 {% block title %}Categorías | Panel Nutrivid{% endblock %}
 {% block panel_content %}
-<div class="toolbar">
-  <h2>Categorías de {{ sucursal_activa.nombre }} ({{ categorias|length }})</h2>
+<div>
+  <p class="antetitulo">Categorías de {{ sucursal_activa.nombre }}</p>
+  <h1 class="titulo-pagina cabeza-seccion__titulo">Categorías</h1>
 </div>
 
-<div class="split-layout">
-  <div class="split-list">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Nombre</th><th>Descripción</th><th>Activa</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-          {% for categoria in categorias %}
-          <tr>
-            <td><strong>{{ categoria.nombre }}</strong></td>
-            <td>{{ categoria.descripcion }}</td>
-            <td class="td-activo">
-              <form method="post" action="{% url 'panel:categoria_toggle_activo' categoria.pk %}" class="activo-form">
-                {% csrf_token %}
-                <input
-                  type="checkbox"
-                  class="switch-input"
-                  name="activo"
-                  onchange="this.form.submit()"
-                  {% if categoria.activo %}checked{% endif %}
-                  title="Categoría activa"
-                  aria-label="Activar o desactivar {{ categoria.nombre }}">
-              </form>
-            </td>
-            <td class="td-actions">
-              <div class="td-actions-inner">
-                <a class="btn btn-secondary btn-sm" href="#editar-categoria-{{ categoria.pk }}">Editar</a>
-                <a class="btn btn-danger btn-sm" href="#borrar-categoria-{{ categoria.pk }}">Eliminar</a>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr class="empty-row"><td colspan="4">No hay categorías.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<div class="categorias-panel">
+  <div class="tarjeta lista-categorias">
+    {% for c in categorias %}
+      <div class="fila-categoria">
+        <div class="fila-categoria__textos">
+          <p class="tabla__nombre">{{ c.nombre }}</p>
+          <p class="tabla__detalle">{{ c.cantidad }} producto{{ c.cantidad|pluralize }} · {{ c.descripcion|default:"—" }}</p>
+          {% if not c.activo and c.cantidad %}
+            <p class="insignia insignia--aviso fila-categoria__aviso">{% icono "warning" %}Inactiva · sus {{ c.cantidad }} productos siguen publicados</p>
+          {% endif %}
+        </div>
+        <form method="post" action="{% url 'panel:categoria_toggle_activo' c.pk %}">
+          {% csrf_token %}
+          <button class="interruptor" type="submit" role="switch" aria-checked="{{ c.activo|yesno:'true,false' }}"{% if not c.activo %} name="activo" value="on"{% endif %} aria-label="Categoría {{ c.nombre }} {{ c.activo|yesno:'activa,inactiva' }}">
+            <span class="interruptor__pista"></span>Activa
+          </button>
+        </form>
+        <div class="tabla__acciones">
+          <button class="boton-icono" type="button" data-abrir="editar-categoria-{{ c.pk }}" aria-label="Editar {{ c.nombre }}">{% icono "pencil-simple" %}</button>
+          <button class="boton-icono boton-icono--peligro" type="button" data-abrir="borrar-categoria-{{ c.pk }}" aria-label="Eliminar {{ c.nombre }}">{% icono "trash" %}</button>
+        </div>
+      </div>
+    {% empty %}
+      <p class="lista-categorias__vacia">No hay categorías.</p>
+    {% endfor %}
   </div>
 
-  <div class="split-form">
-    <div class="panel-card">
-      <h2>Nueva categoría en {{ sucursal_activa.nombre }}</h2>
-      <form method="post">
+  <form class="tarjeta form-categoria" method="post" novalidate data-formulario-envio>
+    {% csrf_token %}
+    <p class="form-categoria__titulo">Nueva categoría en {{ sucursal_activa.nombre }}</p>
+    <label class="campo">Nombre
+      {{ form.nombre|campo }}
+      {% for e in form.nombre.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+    </label>
+    <label class="campo">Descripción <span class="campo__opcional">Opcional</span>
+      {{ form.descripcion|campo }}
+    </label>
+    <p class="campo__ayuda">Se crea activa y solo en {{ sucursal_activa.nombre }}.</p>
+    <button class="boton" type="submit" data-texto-envio="Creando…">Crear categoría</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block capas %}
+{% for c in categorias %}
+<dialog class="capa capa--modal" id="editar-categoria-{{ c.pk }}" aria-labelledby="editar-categoria-{{ c.pk }}-t"{% if c.modal_forzado_abierto %} data-abrir-al-cargar{% endif %}>
+  <div class="capa__velo"></div>
+  <form class="modal" method="post" action="{% url 'panel:categoria_editar' c.pk %}" novalidate>
+    {% with form=c.edit_form %}{% include "panel/_categoria_form_fields.html" %}{% endwith %}
+  </form>
+</dialog>
+
+<dialog class="capa capa--modal" id="borrar-categoria-{{ c.pk }}" aria-labelledby="borrar-categoria-{{ c.pk }}-t">
+  <div class="capa__velo"></div>
+  <div class="modal">
+    <h2 class="titulo-dialogo" id="borrar-categoria-{{ c.pk }}-t">Eliminar «{{ c.nombre }}»</h2>
+    {% if c.cantidad %}
+      <div class="nota nota--aviso nota--bloque">{% icono "warning" %}<span>No se puede eliminar «{{ c.nombre }}»: todavía tiene {{ c.cantidad }} producto{{ c.cantidad|pluralize }} cargado{{ c.cantidad|pluralize }} en {{ sucursal_activa.nombre }}. Quitá primero esos productos o desactivala.</span></div>
+      <div class="modal__acciones">
+        <button class="boton boton--secundario" type="button" data-cerrar>Cerrar</button>
+        {% if c.activo %}
+          <form method="post" action="{% url 'panel:categoria_toggle_activo' c.pk %}">{% csrf_token %}<button class="boton" type="submit">Desactivar</button></form>
+        {% endif %}
+      </div>
+    {% else %}
+      <p class="modal__texto">Esta acción no se puede deshacer.</p>
+      <form class="modal__acciones" method="post" action="{% url 'panel:categoria_eliminar' c.pk %}">
         {% csrf_token %}
-        {{ form.non_field_errors }}
-        <div class="field">
-          <label for="{{ form.nombre.id_for_label }}">Nombre *</label>
-          {{ form.nombre }}
-          {{ form.nombre.errors }}
-        </div>
-        <div class="field">
-          <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
-          {{ form.descripcion }}
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">Crear categoría</button>
-        </div>
+        <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+        <button class="boton boton--peligro" type="submit">Eliminar categoría</button>
       </form>
-    </div>
+    {% endif %}
   </div>
-</div>
-
-{% for categoria in categorias %}
-<div id="editar-categoria-{{ categoria.pk }}" class="modal-overlay{% if categoria.modal_forzado_abierto %} is-open{% endif %}">
-  <div class="modal-box modal-box-form">
-    <h2>Editar categoría</h2>
-    <form method="post" action="{% url 'panel:categoria_editar' categoria.pk %}">
-      {% with form=categoria.edit_form cancelar_href="#" %}
-        {% include "panel/_categoria_form_fields.html" %}
-      {% endwith %}
-    </form>
-  </div>
-</div>
-<div id="borrar-categoria-{{ categoria.pk }}" class="modal-overlay">
-  <div class="modal-box">
-    <h3>¿Eliminar "{{ categoria.nombre }}"?</h3>
-    <p>Esta acción no se puede deshacer. Si la categoría todavía tiene productos cargados, no se va a poder eliminar.</p>
-    <div class="modal-actions">
-      <a class="btn btn-secondary" href="#">Cancelar</a>
-      <form method="post" action="{% url 'panel:categoria_eliminar' categoria.pk %}">
-        {% csrf_token %}
-        <button class="btn btn-danger" type="submit">Eliminar categoría</button>
-      </form>
-    </div>
-  </div>
-</div>
+</dialog>
 {% endfor %}
 {% endblock %}

@@ -1,39 +1,37 @@
 {% comment %}
-Campos del formulario de usuario (username/nombre/apellido/sucursales) +
-fila de acciones (Cambiar contraseña / Cancelar / Guardar). No incluye
-email (no se usa en este sistema) ni el estado activo/inactivo: ese estado
-se cambia solamente desde el switch de la lista de usuarios.
-Se incluye tanto desde la pagina standalone (usuario_form.html, fallback
-para navegacion directa) como desde el modal de edicion en usuarios.html.
-Solo se usa para EDITAR (siempre hay una instancia): la creacion de
-usuarios tiene su propio formulario en usuarios.html, sin pasar por aca.
-Espera en el contexto: `form`, `cancelar_href`, `password_href`.
+Campos de "Editar usuario" (usuario, nombre, apellido, sucursales). Nunca
+incluye is_superuser, contraseña ni el estado activo (ese se cambia solo
+desde el interruptor de la lista). Se usa en el modal de usuarios.html y en
+la página suelta usuario_form.html.
+Espera: `form` y `usuario_pk` (para abrir el modal de contraseña) o
+`password_url` + `volver_url` (página suelta).
 {% endcomment %}
+{% load tienda %}
 {% csrf_token %}
-{{ form.non_field_errors }}
-<div class="field">
-  <label for="{{ form.username.id_for_label }}">Nombre de usuario *</label>
-  {{ form.username }}
-  {{ form.username.errors }}
+<h2 class="titulo-dialogo">Editar usuario</h2>
+{% for e in form.non_field_errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+<label class="campo">Usuario
+  {{ form.username|campo }}
+  {% for e in form.username.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+</label>
+<div class="campos-2">
+  <label class="campo">Nombre {{ form.first_name|campo }}</label>
+  <label class="campo">Apellido {{ form.last_name|campo }}</label>
 </div>
-<div class="form-row">
-  <div class="field">
-    <label for="{{ form.first_name.id_for_label }}">Nombre</label>
-    {{ form.first_name }}
+<fieldset class="etiquetas">
+  <legend class="etiquetas__titulo">Sucursales a las que puede entrar</legend>
+  <div class="casillas casillas--fila">
+    {% for opcion in form.sucursales %}
+      <label class="casilla casilla--chica">{{ opcion.tag }}<span>{{ opcion.choice_label }}</span>{% if not opcion.data.value.instance.activo %}<span class="casilla__extra casilla__extra--aviso">inactiva</span>{% endif %}</label>
+    {% endfor %}
   </div>
-  <div class="field">
-    <label for="{{ form.last_name.id_for_label }}">Apellido</label>
-    {{ form.last_name }}
-  </div>
-</div>
-<div class="field usuarios-checklist">
-  <label>{{ form.sucursales.label }}</label>
-  {{ form.sucursales }}
-</div>
-<div class="form-actions form-actions-split">
-  <a class="btn btn-secondary btn-sm" href="{{ password_href }}">Cambiar contraseña</a>
-  <div class="form-actions-right">
-    <a class="btn btn-secondary" href="{{ cancelar_href }}">Cancelar</a>
-    <button class="btn btn-primary" type="submit">Guardar</button>
-  </div>
+</fieldset>
+{% if password_url %}
+  <a class="enlace enlace--inicio" href="{{ password_url }}">Cambiar contraseña</a>
+{% else %}
+  <button class="enlace enlace--inicio" type="button" data-cambiar-a="password-usuario-{{ usuario_pk }}">Cambiar contraseña</button>
+{% endif %}
+<div class="modal__acciones">
+  {% if volver_url %}<a class="boton boton--secundario" href="{{ volver_url }}">Cancelar</a>{% else %}<button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>{% endif %}
+  <button class="boton" type="submit">Guardar</button>
 </div>

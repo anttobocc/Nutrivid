@@ -1,63 +1,64 @@
 {% load tienda %}
-<dialog class="panel panel--lateral" id="dialogoCarrito" aria-labelledby="carritoTitulo">
-  <header class="panel__cabeza">
-    <div>
-      <h2 id="carritoTitulo">Tu pedido</h2>
-      <p class="panel__sub" id="carritoSub"></p>
-    </div>
-    <button class="boton-icono" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
-  </header>
-
-  <div class="panel__cuerpo">
-    <section data-paso="armar">
-      <div class="vacio" id="carritoVacio">
-        {% icono "shopping-cart-simple" %}
-        <b>Todavía no sumaste productos</b>
-        <p>Elegí lo que necesitás del catálogo y armá el pedido acá.</p>
-        <a class="boton boton--marca" href="{% url 'productos:catalogo' %}">Ver catálogo</a>
+<dialog class="capa capa--hoja" id="dialogoCarrito" aria-labelledby="carritoTitulo">
+  <div class="capa__velo"></div>
+  <div class="hoja hoja--lateral hoja-pedido">
+    <div class="hoja__agarre" aria-hidden="true"></div>
+    <div class="hoja-pedido__cabeza">
+      <div>
+        <h2 class="hoja__titulo" id="carritoTitulo">Tu pedido</h2>
+        <p class="hoja-pedido__sub">Para retirar o coordinar en <b data-sucursal-nombre></b></p>
       </div>
+      <button class="boton-icono boton-icono--cerrar" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
+    </div>
+
+    {# Paso 1: armar #}
+    <div class="pedido-vacio" id="carritoVacio" data-paso="armar">
+      {% icono "basket" %}
+      <p class="pedido-vacio__titulo">Todavía no sumaste productos</p>
+      <a class="boton boton--medio" href="{% url 'productos:catalogo' %}">Ver catálogo</a>
+    </div>
+    <div class="hoja-pedido__cuerpo" id="carritoArmar" data-paso="armar" hidden>
       <ul class="lineas" id="carritoLineas"></ul>
-
       <form class="datos-pedido" id="formPedido" novalidate hidden>
-        <div class="campo" id="campoNombre">
-          <label for="pedidoNombre">Tu nombre</label>
-          <input id="pedidoNombre" name="nombre" type="text" autocomplete="name" maxlength="80" required aria-describedby="pedidoNombreError">
-          <p class="campo__error" id="pedidoNombreError" hidden>{% icono "warning-circle" %}<span>Escribí tu nombre para saber a quién preparar el pedido.</span></p>
-        </div>
-        <div class="campo">
-          <label for="pedidoNotas">Notas <span>(opcional)</span></label>
-          <textarea id="pedidoNotas" name="notas" rows="2" maxlength="300" aria-describedby="pedidoNotasAyuda"></textarea>
-          <p class="campo__ayuda" id="pedidoNotasAyuda">Horario de retiro, envío o lo que necesites aclarar.</p>
-        </div>
+        <label class="campo">Tu nombre
+          <input class="entrada entrada--grande" id="pedidoNombre" name="nombre" type="text" autocomplete="name" maxlength="80" aria-describedby="pedidoNombreError">
+          <span class="campo__error" id="pedidoNombreError" role="alert" hidden>{% icono "warning-circle" %}Escribí tu nombre para saber a quién preparar el pedido.</span>
+        </label>
+        <label class="campo">Notas <span class="campo__opcional">Opcional: horario de retiro, envío, etc.</span>
+          <textarea class="entrada entrada--grande" id="pedidoNotas" name="notas" rows="3" maxlength="300"></textarea>
+          <span class="datos-pedido__contador" id="pedidoNotasContador">0/300</span>
+        </label>
       </form>
-    </section>
+    </div>
+    <div class="hoja-pedido__pie" id="carritoPieArmar" data-paso="armar" hidden>
+      <div class="hoja-pedido__total"><span>Total estimado</span><b id="carritoTotal" aria-live="polite">$ 0</b></div>
+      <button class="boton boton--grande" type="submit" form="formPedido" id="revisarPedido">Revisar pedido</button>
+      <p class="hoja-pedido__nota">Los precios son estimados. Te confirmamos stock y total por WhatsApp.</p>
+    </div>
 
-    <section data-paso="confirmar" hidden aria-labelledby="confirmarTitulo">
-      <h3 id="confirmarTitulo" class="sr-only">Confirmá el pedido</h3>
-      <p>Revisá el mensaje. Se abre WhatsApp con este texto y lo enviás desde ahí.</p>
-      <pre class="mensaje" id="mensajePedido"></pre>
-    </section>
+    {# Paso 2: confirmar #}
+    <div class="hoja-pedido__cuerpo hoja-pedido__confirmar entra" data-paso="confirmar" hidden>
+      <p class="hoja-pedido__subtitulo">Revisá el mensaje antes de enviarlo</p>
+      <p class="hoja-pedido__ayuda">Se abre WhatsApp con este texto. Todavía no se envía nada: lo mandás vos desde el chat.</p>
+      <pre class="mensaje-pedido" id="mensajePedido"></pre>
+      {% if not config_tienda.whatsapp %}
+        <div class="sin-whatsapp" role="alert">No hay un número de WhatsApp configurado. No se puede enviar el pedido.</div>
+      {% endif %}
+    </div>
+    <div class="hoja-pedido__pie hoja-pedido__pie--dos" data-paso="confirmar" hidden>
+      <button class="boton boton--secundario boton--grande" type="button" id="volverPedido">Volver</button>
+      <a class="boton boton--grande" id="abrirWhatsapp" target="_blank" rel="noopener"{% if not config_tienda.whatsapp %} aria-disabled="true"{% endif %}>{% icono "whatsapp-logo" "i hoja-pedido__wa" %}<span>Abrir WhatsApp</span></a>
+    </div>
 
-    <section class="paso-listo" data-paso="listo" hidden>
-      {% icono "check-circle" %}
-      <h3>Abrimos WhatsApp con tu pedido</h3>
-      <p>Cuando lo envíes, te respondemos con el stock y el total. Si ya lo enviaste, podés vaciar el pedido.</p>
-    </section>
+    {# Paso 3: listo #}
+    <div class="pedido-listo entra" data-paso="listo" hidden>
+      <span class="pedido-listo__icono">{% icono "whatsapp-logo" %}</span>
+      <p class="pedido-listo__titulo">Abrimos WhatsApp con tu pedido</p>
+      <p class="pedido-listo__texto">Envialo desde el chat. Desde acá no podemos saber si el mensaje se mandó, así que tu pedido sigue guardado.</p>
+      <div class="pedido-listo__acciones">
+        <button class="boton boton--secundario boton--medio" type="button" id="vaciarPedido">Vaciar pedido</button>
+        <button class="boton boton--medio" type="button" data-cerrar>Seguir comprando</button>
+      </div>
+    </div>
   </div>
-
-  <footer class="panel__pie" id="carritoPie" hidden>
-    <div class="total"><span>Total estimado</span><b id="carritoTotal">$ 0</b></div>
-    <div data-pie="armar">
-      <button class="boton boton--acento boton--ancho" type="submit" form="formPedido">Revisar pedido{% icono "arrow-right" %}</button>
-    </div>
-    <div class="panel__acciones" data-pie="confirmar" hidden>
-      <button class="boton boton--fantasma" type="button" id="volverPedido">{% icono "arrow-left" %}Volver</button>
-      <a class="boton boton--acento" id="abrirWhatsapp" href="#" target="_blank" rel="noopener">{% icono "whatsapp-logo" %}Abrir WhatsApp</a>
-    </div>
-    <div class="panel__acciones" data-pie="listo" hidden>
-      <button class="boton boton--fantasma" type="button" id="vaciarPedido">Vaciar pedido</button>
-      <button class="boton boton--marca" type="button" data-cerrar>Seguir comprando</button>
-    </div>
-    <p class="nota-pedido">{% icono "info" %}Los precios son estimados. Te confirmamos stock y total por WhatsApp.</p>
-  </footer>
 </dialog>

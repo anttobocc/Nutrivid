@@ -1,0 +1,110 @@
+/* Tokens de diseño compartidos por la tienda y el panel.
+   Paleta, tipografía y movimiento del rediseño.
+   El diseño es solo en modo claro. */
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("../fonts/bricolage-grotesque.woff2") format("woff2");
+  font-weight: 200 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist";
+  src: url("../fonts/geist.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../fonts/geist-mono.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Superficies */
+  --pagina: #f7f7f0;
+  --blanco: #ffffff;
+  --oscuro: #1b2316;          /* portada, panel lateral, pie */
+  --oscuro-tarjeta: #2a3324;  /* tarjeta sobre oscuro */
+  --pozo: #efefe4;            /* botón cerrar, sin imagen */
+  --esqueleto: #ecede2;
+  --seleccion: #eef2e0;       /* sucursal elegida */
+
+  /* Marca */
+  --oliva: #34431f;
+  --oliva-hover: #2a3618;
+  --rosa: #e872b0;
+  --sobre-rosa: #3d0c27;
+  --magenta: #c2306c;
+  --salvia: #c8d5a0;
+  --salvia-borde: #b8c58e;
+  --crema: #eef0dd;
+  --crema-2: #d9dcc8;         /* texto secundario sobre oscuro */
+  --crema-3: #9a9e8c;         /* rótulos sobre oscuro */
+
+  /* Texto */
+  --tinta: #1b2316;
+  --tinta-2: #5b6150;
+  --tinta-3: #3e4535;
+  --tachado: #6f7563;
+
+  /* Líneas */
+  --borde: #e0e1d3;
+  --borde-fuerte: #cfd1bf;
+  --linea: #ecede2;
+  --linea-fila: #eef0dd;
+
+  /* Estados */
+  --exito-fondo: #e6ecd2;
+  --exito-texto: #34431f;
+  --aviso-fondo: #fbe3f0;
+  --aviso-texto: #8a1f4d;
+  --error-texto: #b0285f;
+  --apagado: #9a9e8c;
+  --desactivado: #cfd1bf;
+  --peligro-desactivado: #e8c3d6;
+
+  /* Velos y sombras */
+  --velo: rgb(18 24 14 / 0.5);
+  --velo-lateral: rgb(18 24 14 / 0.35);
+  --velo-modal: rgb(18 24 14 / 0.45);
+  --sombra-tarjeta: 0 14px 28px -18px rgb(27 35 22 / 0.5);
+  --sombra-hoja: 0 30px 60px -20px rgb(0 0 0 / 0.45);
+  --sombra-modal: 0 30px 70px -30px rgb(0 0 0 / 0.6);
+  --sombra-lateral: -20px 0 50px -20px rgb(0 0 0 / 0.4);
+  --sombra-menu: 0 18px 40px -16px rgb(0 0 0 / 0.5);
+  --sombra-aviso: 0 12px 30px -12px rgb(0 0 0 / 0.5);
+  --anillo-foco: 0 0 0 3px rgb(194 48 108 / 0.2);
+
+  /* Tipografía */
+  --f-titulos: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-texto: "Geist", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Forma */
+  --r-pildora: 999px;
+  --r-tarjeta: 20px;
+  --r-bloque: 18px;
+  --r-modal: 24px;
+  --r-campo: 12px;
+  --r-campo-grande: 14px;
+  --ancho-tienda: 1240px;
+  --ancho-panel: 1180px;
+
+  /* Movimiento */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-hoja: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-carrusel: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* Capas */
+  --z-cabecera: 20;
+  --z-barra: 25;
+  --z-lateral: 40;
+  --z-elegir: 45;
+  --z-modal: 50;
+  --z-hoja: 60;
+  --z-avisos: 70;
+}

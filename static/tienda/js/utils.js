@@ -35,7 +35,7 @@ export function enlaceWhatsapp(texto) {
   return `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(texto)}`;
 }
 
-export const movimientoReducido = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+export { movimientoReducido } from "../../comun/js/interfaz.js";
 
 // localStorage puede no estar disponible (modo privado, bloqueado): la
 // tienda tiene que seguir funcionando igual, sin persistir.

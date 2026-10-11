@@ -1,0 +1,20 @@
+{% load static %}<!doctype html>
+<html lang="es-AR" class="panel">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block title %}Panel | Nutrivid{% endblock %}</title>
+  <link rel="icon" href="{% static 'comun/img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preload" href="{% static 'comun/fonts/geist.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'comun/fonts/bricolage-grotesque.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'comun/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'comun/css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'comun/css/componentes.css' %}">
+  <link rel="stylesheet" href="{% static 'panel/css/panel.css' %}">
+</head>
+<body class="{% block clase_body %}{% endblock %}">
+  {% block cuerpo %}{% endblock %}
+  <script type="module" src="{% static 'panel/js/panel.js' %}"></script>
+</body>
+</html>

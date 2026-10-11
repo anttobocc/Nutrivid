@@ -2,54 +2,51 @@
 {% load static tienda %}
 
 {% block title %}Catálogo | Nutrivid Corrientes{% endblock %}
-{% block description %}Catálogo de Nutrivid Corrientes con precios y stock por sucursal. Armá tu pedido y envialo por WhatsApp.{% endblock %}
-{% block estilos %}
-    <link rel="stylesheet" href="{% static 'tienda/css/catalogo.css' %}">
-{% endblock %}
+{% block description %}Catálogo de Nutrivid Corrientes con stock por sucursal. Armá tu pedido y envialo por WhatsApp.{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'tienda/css/catalogo.css' %}">{% endblock %}
 
 {% block contenido %}
-<div class="catalogo contenedor">
-  <header class="catalogo__cabeza">
-    <h1>Catálogo</h1>
-    <p>Precios y stock de <b data-sucursal-nombre>tu sucursal</b>.</p>
-  </header>
+<div class="contenedor-tienda catalogo">
+  <h1 class="catalogo__titulo">Catálogo</h1>
+  <p class="catalogo__bajada">Disponibilidad y stock de <span data-sucursal-nombre>tu sucursal</span></p>
+  <label class="buscador catalogo__buscador">
+    {% icono "magnifying-glass" %}
+    <span class="sr-only">Buscar en el catálogo</span>
+    <input id="buscar" type="search" placeholder="Buscar por nombre, categoría o descripción" autocomplete="off" enterkeyhint="search">
+    <button class="buscador__borrar" type="button" id="borrarBusqueda" aria-label="Borrar búsqueda" hidden>{% icono "x" %}</button>
+  </label>
 
   <div class="catalogo__cuerpo">
     <aside class="filtros" aria-label="Filtros">
-      <div class="buscador" role="search">
-        {% icono "magnifying-glass" %}
-        <label class="sr-only" for="buscar">Buscar productos</label>
-        <input id="buscar" type="search" placeholder="Buscar productos" autocomplete="off" enterkeyhint="search">
+      <div>
+        <p class="filtros__rotulo" id="rotuloCategoria">Categoría</p>
+        <div class="chips" id="chipsCategorias" role="group" aria-labelledby="rotuloCategoria"></div>
       </div>
-      <div class="filtros__grupo">
-        <h2 class="filtros__titulo" id="tituloCategorias">Categoría</h2>
-        <div class="chips" id="chipsCategorias" role="group" aria-labelledby="tituloCategorias">
-          <button class="chip" type="button" aria-pressed="true">Todo</button>
-        </div>
+      <div>
+        <p class="filtros__rotulo" id="rotuloMostrar">Mostrar</p>
+        <div class="chips" id="chipsFiltros" role="group" aria-labelledby="rotuloMostrar"></div>
       </div>
-      <div class="filtros__grupo">
-        <h2 class="filtros__titulo" id="tituloMostrar">Mostrar</h2>
-        <div class="chips" id="chipsFiltros" role="group" aria-labelledby="tituloMostrar"></div>
-      </div>
+      <label class="filtros__orden">Ordenar por
+        <select class="selector selector--suave" id="orden">
+          <option value="destacados">Destacados</option>
+          <option value="precio-asc">Menor precio</option>
+          <option value="precio-desc">Mayor precio</option>
+          <option value="nuevos">Novedades</option>
+          <option value="nombre">Nombre (A-Z)</option>
+        </select>
+      </label>
     </aside>
 
-    <div class="resultados">
+    <section class="resultados" aria-label="Productos">
       <div class="resultados__barra">
-        <p class="resultados__conteo"><span id="conteo" aria-live="polite">Cargando productos…</span><button class="enlace" type="button" id="limpiarFiltros" hidden>Limpiar filtros</button></p>
-        <label class="orden" for="orden">Ordenar
-          <select class="selector" id="orden">
-            <option value="destacados">Destacados</option>
-            <option value="precio-asc">Menor precio</option>
-            <option value="precio-desc">Mayor precio</option>
-            <option value="nuevos">Novedades</option>
-            <option value="nombre">Nombre (A-Z)</option>
-          </select>
-        </label>
+        <span class="resultados__conteo" id="conteo" aria-live="polite"></span>
+        <span class="resultados__filtros" id="filtrosActivos"></span>
+        <button class="enlace" type="button" id="limpiarFiltros" hidden>Limpiar filtros</button>
       </div>
-      <div class="grilla-productos" id="gridCatalogo">
-        {% for _ in "12345678" %}{% include "tienda/parciales/_esqueleto_tarjeta.html" %}{% endfor %}
+      <div class="grilla-productos" id="gridCatalogo" aria-busy="true">
+        {% for _ in "123456" %}{% include "tienda/parciales/_tarjeta_esqueleto.html" %}{% endfor %}
       </div>
-    </div>
+    </section>
   </div>
 </div>
 {% endblock %}

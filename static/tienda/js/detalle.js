@@ -1,25 +1,33 @@
-// Detalle de producto en un diálogo. Se puede compartir con ?producto=<id>.
-import { buscarProducto, nombreSucursal } from "./estado.js";
-import { accionHTML, imagenHTML, precioHTML, stockHTML } from "./tarjetas.js";
-import { abrirDialogo, aviso } from "./ui.js";
-import { esc } from "./utils.js";
+// Detalle de producto en una hoja. Se puede compartir con ?producto=<id>.
+import { abrirCapa, aviso } from "../../comun/js/interfaz.js";
+import { CONFIG } from "./config.js";
+import { buscarProducto, estadoStock, nombreSucursal } from "./estado.js";
+import { accionHTML, imagenHTML, insigniasHTML, precioHTML, urlProducto } from "./tarjetas.js";
+import { esc, icono } from "./utils.js";
 
 const dialogo = document.getElementById("dialogoProducto");
 const contenido = document.getElementById("detalleContenido");
-const categoria = document.getElementById("detalleCategoria");
 let productoAbierto = null;
 
 function render(producto) {
-  categoria.textContent = producto.category;
+  const stock = estadoStock(producto);
+  const ruta = urlProducto(producto.id);
   contenido.innerHTML = `
-    <div class="detalle">
-      <div class="pozo">${imagenHTML(producto, { eager: true })}</div>
+    <div class="detalle${stock.disponible ? "" : " detalle--agotado"}">
+      <div class="detalle__imagen">
+        ${imagenHTML(producto, { eager: true }).replace('alt=""', `alt="${esc(producto.name)}"`)}
+        <span class="detalle__insignias">${insigniasHTML(producto, { grande: true })}</span>
+      </div>
       <div class="detalle__info">
-        <h2 id="detalleTitulo">${esc(producto.name)}</h2>
-        ${precioHTML(producto)}
-        ${stockHTML(producto, { largo: true })}
+        <p class="detalle__categoria">${esc(producto.category)}</p>
+        <h2 class="detalle__nombre" id="detalleTitulo">${esc(producto.name)}</h2>
+        <p class="detalle__precio">${precioHTML(producto)}</p>
+        <p class="detalle__stock"><span class="punto punto--${stock.clase}"></span>${esc(stock.largo)}</p>
         ${producto.description ? `<p class="detalle__descripcion">${esc(producto.description)}</p>` : ""}
-        <div class="detalle__accion" data-accion="${producto.id}" data-grande>${accionHTML(producto, { grande: true })}</div>
+        <div class="detalle__acciones">
+          <div class="detalle__accion" data-accion="${producto.id}" data-grande>${accionHTML(producto, { grande: true })}</div>
+          <button class="copiar-enlace" type="button" data-copiar-enlace="${esc(ruta)}">${icono("link")}<span>Copiar enlace <span class="copiar-enlace__url">${esc(ruta)}</span></span></button>
+        </div>
       </div>
     </div>`;
 }
@@ -37,15 +45,17 @@ export function abrirDetalle(id) {
   productoAbierto = producto.id;
   render(producto);
   ponerEnURL(producto.id);
-  abrirDialogo(dialogo);
+  abrirCapa(dialogo);
   return true;
 }
 
-// Si el producto abierto cambió (otra sucursal, otro stock), se repinta.
+// Si el producto abierto cambió (otra sucursal, otro stock), se repinta; si
+// ya no está en la sucursal, se cierra la hoja.
 export function refrescarDetalle() {
   if (!dialogo?.open || productoAbierto === null) return;
   const producto = buscarProducto(productoAbierto);
   if (producto) render(producto);
+  else dialogo.close();
 }
 
 export function abrirDetalleDesdeURL() {
@@ -53,7 +63,16 @@ export function abrirDetalleDesdeURL() {
   if (!id) return;
   if (!abrirDetalle(id)) {
     ponerEnURL(null);
-    aviso(`Ese producto no está disponible en ${nombreSucursal()}.`, { icono: "warning-circle" });
+    aviso(`Ese producto no está disponible en ${nombreSucursal()}.`);
+  }
+}
+
+async function copiar(ruta) {
+  try {
+    await navigator.clipboard.writeText(new URL(ruta, window.location.origin).href);
+    aviso("Enlace copiado.");
+  } catch {
+    aviso("No se pudo copiar el enlace.", "error");
   }
 }
 
@@ -62,4 +81,9 @@ export function iniciarDetalle() {
     productoAbierto = null;
     ponerEnURL(null);
   });
+  contenido?.addEventListener("click", (event) => {
+    const boton = event.target.closest("[data-copiar-enlace]");
+    if (boton) copiar(boton.dataset.copiarEnlace);
+  });
+  if (!CONFIG.urls.catalogo) console.warn("Falta la URL del catálogo.");
 }

@@ -1,73 +1,87 @@
-{% extends "base.html" %}
-{% load static %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/panel.css' %}">{% endblock %}
-{% block content %}
-{% with seccion=request.resolver_match.url_name %}
-<div class="panel-shell">
-  <header class="panel-header">
-    <a class="panel-brand" href="{% url 'panel:dashboard' %}">
-      <span class="mark">N</span>
-      <strong>Nutrivid</strong>
-      <span class="panel-brand-user">{{ user.username|capfirst }}</span>
-    </a>
-    <nav class="panel-nav" aria-label="Secciones del panel">
-      <a class="panel-nav-link{% if 'producto' in seccion or seccion == 'dashboard' %} is-active{% endif %}" href="{% url 'panel:dashboard' %}"{% if 'producto' in seccion or seccion == 'dashboard' %} aria-current="page"{% endif %}>
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        Productos
-      </a>
-      <a class="panel-nav-link{% if 'categoria' in seccion %} is-active{% endif %}" href="{% url 'panel:categorias' %}"{% if 'categoria' in seccion %} aria-current="page"{% endif %}>
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M3 12V4h8l10 10-8 8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="7.5" cy="8.5" r="1.4" fill="currentColor"/></svg>
-        Categorías
-      </a>
+{% extends "panel/esqueleto.html" %}
+{% load tienda %}
+{% block cuerpo %}
+{% with url_name=request.resolver_match.url_name %}
+{% if "categoria" in url_name %}{% firstof "categorias" as seccion %}{% elif "sucursal" in url_name and url_name != "sucursal_activa" %}{% firstof "sucursales" as seccion %}{% elif "usuario" in url_name %}{% firstof "usuarios" as seccion %}{% else %}{% firstof "productos" as seccion %}{% endif %}
+<div class="panel-app">
+  <aside class="lateral-panel" aria-label="Menú del panel">
+    <a class="logo logo--claro lateral-panel__logo" href="{% url 'panel:dashboard' %}">nutrivid. <span class="logo__sufijo">panel</span></a>
+
+    <div class="selector-sucursal">
+      {% if sucursales_disponibles|length > 1 %}
+        <button class="selector-sucursal__boton{% for m in messages %}{% if 'cambio-sucursal' in m.tags %} es-recien-cambiada{% endif %}{% endfor %}" type="button" id="botonSucursal" aria-haspopup="listbox" aria-expanded="false" aria-controls="menuSucursal">
+          <span class="selector-sucursal__rotulo">Sucursal activa</span>
+          <span class="selector-sucursal__nombre">
+            {% if sucursal_activa %}{{ sucursal_activa.nombre }}{% else %}<span class="selector-sucursal__vacio">Elegí una</span>{% endif %}
+            {% icono "caret-up-down" %}
+          </span>
+        </button>
+        <form class="selector-sucursal__menu" id="menuSucursal" method="post" action="{% url 'panel:sucursal_activa' %}" role="listbox" aria-label="Cambiar sucursal activa" hidden>
+          {% csrf_token %}
+          <p class="selector-sucursal__titulo">Trabajar en…</p>
+          {% for s in sucursales_disponibles %}
+            <button class="selector-sucursal__opcion" type="submit" name="sucursal_id" value="{{ s.id }}" role="option" aria-selected="{% if sucursal_activa and s.id == sucursal_activa.id %}true{% else %}false{% endif %}" data-nombre="{{ s.nombre }}">
+              {{ s.nombre }}{% if sucursal_activa and s.id == sucursal_activa.id %}{% icono "check" %}{% endif %}
+            </button>
+          {% endfor %}
+        </form>
+      {% elif sucursal_activa %}
+        <div class="selector-sucursal__fijo"><span class="selector-sucursal__rotulo">Sucursal</span><span class="selector-sucursal__nombre">{{ sucursal_activa.nombre }}</span></div>
+      {% else %}
+        <div class="selector-sucursal__ninguna">Sin sucursal asignada</div>
+      {% endif %}
+    </div>
+
+    <nav class="nav-panel" aria-label="Panel">
+      <p class="nav-panel__rotulo">De la sucursal</p>
+      <a class="nav-panel__enlace" href="{% url 'panel:dashboard' %}"{% if seccion == "productos" %} aria-current="page"{% endif %}>{% icono "package" %}Productos</a>
+      <a class="nav-panel__enlace" href="{% url 'panel:categorias' %}"{% if seccion == "categorias" %} aria-current="page"{% endif %}>{% icono "tag" %}Categorías</a>
       {% if user.is_superuser %}
-      <a class="panel-nav-link{% if 'sucursal' in seccion %} is-active{% endif %}" href="{% url 'panel:sucursales' %}"{% if 'sucursal' in seccion %} aria-current="page"{% endif %}>
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><path d="M4 10v10h16V10M3 10l1.5-5h15L21 10zM3 10c0 1.4 1.3 2.5 3 2.5S9 11.4 9 10c0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5c0 1.4 1.3 2.5 3 2.5s3-1.1 3-2.5M10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
-        Sucursales
-      </a>
-      <a class="panel-nav-link{% if 'usuario' in seccion %} is-active{% endif %}" href="{% url 'panel:usuarios' %}"{% if 'usuario' in seccion %} aria-current="page"{% endif %}>
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M16 4.8a3.4 3.4 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.4 3.5 5.2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        Usuarios
-      </a>
+        <p class="nav-panel__rotulo nav-panel__rotulo--cadena">Toda la cadena</p>
+        <a class="nav-panel__enlace" href="{% url 'panel:sucursales' %}"{% if seccion == "sucursales" %} aria-current="page"{% endif %}>{% icono "storefront" %}Sucursales</a>
+        <a class="nav-panel__enlace" href="{% url 'panel:usuarios' %}"{% if seccion == "usuarios" %} aria-current="page"{% endif %}>{% icono "users" %}Usuarios</a>
       {% endif %}
     </nav>
-    <div class="panel-header-right">
-      {% if sucursales_disponibles|length > 1 %}
-      <form method="post" action="{% url 'panel:sucursal_activa' %}" class="sucursal-selector">
+
+    <div class="lateral-panel__usuario">
+      <p class="lateral-panel__nombre">{{ user.get_full_name|default:user.username }}</p>
+      <p class="lateral-panel__rol">
+        {% if user.is_superuser %}Administración general · Todas las sucursales activas
+        {% elif sucursales_disponibles %}Usuario de sucursal · Acceso a {% for s in sucursales_disponibles %}{{ s.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% else %}Usuario de sucursal · Sin sucursales asignadas{% endif %}
+      </p>
+      <form method="post" action="{% url 'panel:logout' %}">
         {% csrf_token %}
-        <svg class="sucursal-pin" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
-        <label class="sr-only" for="sucursal_id">Sucursal actual</label>
-        <select name="sucursal_id" id="sucursal_id" onchange="this.form.submit()">
-          {% for s in sucursales_disponibles %}
-            <option value="{{ s.id }}" {% if sucursal_activa and s.id == sucursal_activa.id %}selected{% endif %}>{{ s.nombre }}</option>
-          {% endfor %}
-        </select>
-      </form>
-      {% elif sucursal_activa %}
-      <span class="sucursal-badge">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>
-        {{ sucursal_activa.nombre }}
-      </span>
-      {% endif %}
-      <span class="panel-user" title="Sesión iniciada como {{ user.username }}">
-        <span class="sr-only">Sesión iniciada como {{ user.username }}</span>
-        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-3.6 3.8-5.5 7.5-5.5s6.7 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-      </span>
-      <form method="post" action="{% url 'panel:logout' %}">{% csrf_token %}
-        <button class="btn btn-primary btn-logout" type="submit">
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Cerrar sesión
-        </button>
+        <button class="boton boton--contorno-claro lateral-panel__salir" type="submit">{% icono "sign-out" %}Cerrar sesión</button>
       </form>
     </div>
-  </header>
-  <main class="panel-main {% block panel_main_class %}{% endblock %}">
-    {% if messages %}
-      <ul class="panel-messages">
-        {% for message in messages %}<li class="panel-message">{{ message }}</li>{% endfor %}
-      </ul>
+  </aside>
+
+  <main class="principal" id="contenido">
+    {% if seccion == "productos" or seccion == "categorias" %}
+      {% if sucursal_activa %}
+        <div class="franja franja--sucursal">
+          <span class="punto-sucursal"></span>
+          <span>Estás trabajando en <b>{{ sucursal_activa.nombre }}</b></span>
+          <span class="franja__nota">Stock, categoría y disponibilidad se guardan solo en esta sucursal.</span>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="franja franja--cadena">{% icono "globe-simple" %}Toda la cadena · esta sección no depende de la sucursal activa.</div>
     {% endif %}
-    {% block panel_content %}{% endblock %}
+
+    <div class="principal__contenido">
+      {% for m in messages %}
+        <div class="mensaje{% if m.level_tag == 'warning' %} mensaje--aviso{% elif m.level_tag == 'error' %} mensaje--error{% endif %}" role="{% if m.level_tag == 'error' %}alert{% else %}status{% endif %}">
+          {% if m.level_tag == "warning" %}{% icono "warning-fill" %}{% elif m.level_tag == "error" %}{% icono "x-circle-fill" %}{% else %}{% icono "check-circle-fill" %}{% endif %}
+          <span class="mensaje__texto">{{ m.message }}</span>
+          <button class="mensaje__cerrar" type="button" data-cerrar-mensaje aria-label="Cerrar mensaje">{% icono "x" %}</button>
+        </div>
+      {% endfor %}
+      {% block panel_content %}{% endblock %}
+    </div>
   </main>
 </div>
+{% block capas %}{% endblock %}
 {% endwith %}
 {% endblock %}

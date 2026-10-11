@@ -1,28 +1,29 @@
-{% extends "base.html" %}
-{% load static %}
-{% block title %}Ingresar | Panel Nutrivid{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'css/panel.css' %}">{% endblock %}
-{% block content %}
-<div class="login-screen">
-  <div class="login-card">
-    <div class="login-logo">
-      <span class="mark">N</span>
-      <div><strong>Nutrivid</strong><small>Corrientes</small></div>
+{% extends "panel/esqueleto.html" %}
+{% load tienda %}
+{% block title %}Iniciar sesión | Panel Nutrivid{% endblock %}
+{% block clase_body %}pantalla-login{% endblock %}
+{% block cuerpo %}
+<main class="login">
+  <form class="login__tarjeta" method="post" novalidate aria-labelledby="login-h" data-formulario-envio>
+    {% csrf_token %}
+    <div>
+      <p class="logo login__logo">nutrivid<span class="logo__punto">.</span> <span class="logo__sufijo">panel</span></p>
+      <h1 class="login__titulo" id="login-h">Iniciar sesión</h1>
     </div>
-    <h1>Panel de administración</h1>
-    <form method="post">
-      {% csrf_token %}
-      {% if form.errors %}<p class="error-msg">Usuario o contraseña incorrectos.</p>{% endif %}
-      <div class="field">
-        <label for="{{ form.username.id_for_label }}">Usuario</label>
-        {{ form.username }}
-      </div>
-      <div class="field">
-        <label for="{{ form.password.id_for_label }}">Contraseña</label>
-        {{ form.password }}
-      </div>
-      <button class="btn btn-primary btn-full" type="submit">Ingresar</button>
-    </form>
-  </div>
-</div>
+    {% if form.non_field_errors %}
+      <div class="login__error entra" role="alert">{% icono "x-circle-fill" %}Usuario o contraseña incorrectos.</div>
+    {% endif %}
+    <label class="campo login__campo">Usuario
+      <input class="entrada entrada--grande" type="text" name="username" value="{{ form.username.value|default:'' }}" autocomplete="username" autocapitalize="none" autofocus required{% if form.username.errors %} aria-invalid="true"{% endif %}>
+      {% if form.username.errors %}<span class="campo__error" role="alert">Escribí tu usuario.</span>{% endif %}
+    </label>
+    <label class="campo login__campo">Contraseña
+      <input class="entrada entrada--grande" type="password" name="password" autocomplete="current-password" required{% if form.password.errors %} aria-invalid="true"{% endif %}>
+      {% if form.password.errors %}<span class="campo__error" role="alert">Escribí tu contraseña.</span>{% endif %}
+    </label>
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    <button class="boton boton--grande" type="submit" data-texto-envio="Entrando…">Entrar</button>
+    <a class="login__tienda" href="{% url 'productos:home' %}">Ir a la tienda</a>
+  </form>
+</main>
 {% endblock %}

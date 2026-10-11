@@ -1,122 +1,124 @@
 {% extends "panel/base_panel.html" %}
+{% load tienda %}
 {% block title %}Usuarios | Panel Nutrivid{% endblock %}
-{% block panel_main_class %}panel-main-wide{% endblock %}
 {% block panel_content %}
-<div class="toolbar">
-  <h2>Usuarios ({{ usuarios|length }})</h2>
+<div class="cabeza-seccion">
+  <div>
+    <h1 class="titulo-pagina">Usuarios</h1>
+    <p class="cabeza-seccion__resumen">Usuarios de sucursal. Los administradores generales se gestionan fuera del panel.</p>
+  </div>
+  <button class="boton" type="button" data-abrir="nuevoUsuario">{% icono "plus" %}Nuevo usuario</button>
 </div>
 
-<div class="split-layout">
-  <div class="split-list">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Usuario</th><th>Nombre</th><th>Sucursales</th><th>Estado</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-          {% for usuario in usuarios %}
-          <tr>
-            <td><strong>{{ usuario.username }}</strong></td>
-            <td>{{ usuario.get_full_name|default:"—" }}</td>
-            <td>
-              {% with sucursales=usuario.sucursales_autorizadas.all %}
-                {% for s in sucursales %}{{ s.nombre }}{% if not forloop.last %}, {% endif %}{% empty %}<em>Sin sucursal asignada</em>{% endfor %}
-              {% endwith %}
-            </td>
-            <td class="td-estado">
-              <div class="estado-switch">
-                <form method="post" action="{% url 'panel:usuario_toggle_activo' usuario.pk %}" class="activo-form">
-                  {% csrf_token %}
-                  <input
-                    type="checkbox"
-                    class="switch-input"
-                    name="activo"
-                    onchange="this.form.submit()"
-                    {% if usuario.is_active %}checked{% endif %}
-                    title="Usuario activo (puede iniciar sesión)"
-                    aria-label="Activar o desactivar {{ usuario.username }}">
-                </form>
-                <span class="estado-texto">{% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}</span>
-              </div>
-            </td>
-            <td class="td-actions">
-              <div class="td-actions-inner">
-                <a class="btn btn-secondary btn-sm" href="#editar-usuario-{{ usuario.pk }}">Editar</a>
-                <a class="btn btn-secondary btn-sm" href="#password-usuario-{{ usuario.pk }}">Contraseña</a>
-                <a class="btn btn-danger btn-sm" href="#borrar-usuario-{{ usuario.pk }}">Eliminar</a>
-              </div>
-            </td>
-          </tr>
+<div class="tabla">
+  <div class="tabla__ancho tabla__ancho--usuarios">
+    <div class="tabla__fila tabla__fila--cabeza tabla--usuarios"><span>Usuario</span><span>Nombre</span><span>Sucursales asignadas</span><span>Estado</span><span></span></div>
+    {% for u in usuarios %}
+      <div class="tabla__fila tabla--usuarios{% if not u.is_active %} es-inactivo{% endif %}">
+        <span class="tabla__nombre tabla__atenuable">{{ u.username }}</span>
+        <span class="tabla__texto tabla__atenuable">{{ u.get_full_name|default:"—" }}</span>
+        <div class="pastillas">
+          {% for s in u.sucursales_autorizadas.all %}
+            <span class="pastilla{% if not s.activo %} pastilla--inactiva{% endif %}">{{ s.nombre }}{% if not s.activo %} (inactiva){% endif %}</span>
           {% empty %}
-          <tr class="empty-row"><td colspan="5">No hay usuarios normales todavía.</td></tr>
+            <span class="tabla__sin">Sin sucursal asignada</span>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="split-form">
-    <div class="panel-card">
-      <h2>Nuevo usuario</h2>
-      <form method="post" action="{% url 'panel:usuario_crear' %}" novalidate>
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}
-          {% if field.name == "sucursales" %}
-            <div class="field usuarios-checklist">
-              <label>{{ field.label }}</label>
-              {{ field }}
-            </div>
-          {% else %}
-            <div class="field">
-              <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-              {{ field }}
-              {{ field.errors }}
-              {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-            </div>
-          {% endif %}
-        {% endfor %}
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">Crear usuario</button>
         </div>
-      </form>
-    </div>
+        <form method="post" action="{% url 'panel:usuario_toggle_activo' u.pk %}">
+          {% csrf_token %}
+          <button class="interruptor" type="submit" role="switch" aria-checked="{{ u.is_active|yesno:'true,false' }}"{% if not u.is_active %} name="activo" value="on"{% endif %} aria-label="{{ u.username }} {{ u.is_active|yesno:'activo,inactivo' }}">
+            <span class="interruptor__pista"></span>{{ u.is_active|yesno:"Activo,Inactivo" }}
+          </button>
+        </form>
+        <div class="tabla__acciones">
+          <button class="boton boton--secundario boton--chico" type="button" data-abrir="editar-usuario-{{ u.pk }}">Editar</button>
+          <button class="boton boton--secundario boton--chico" type="button" data-abrir="password-usuario-{{ u.pk }}">Contraseña</button>
+          <button class="boton-icono boton-icono--peligro boton-icono--chico" type="button" data-abrir="borrar-usuario-{{ u.pk }}" aria-label="Eliminar {{ u.username }}">{% icono "trash" %}</button>
+        </div>
+      </div>
+    {% empty %}
+      <p class="tabla__vacia">No hay usuarios normales todavía.</p>
+    {% endfor %}
   </div>
 </div>
+{% endblock %}
 
-{% for usuario in usuarios %}
-<div id="editar-usuario-{{ usuario.pk }}" class="modal-overlay{% if usuario.modal_forzado_abierto %} is-open{% endif %}">
-  <div class="modal-box modal-box-form">
-    <h2>Editar {{ usuario.username }}</h2>
-    <form method="post" action="{% url 'panel:usuario_editar' usuario.pk %}" novalidate>
-      {% with form=usuario.edit_form cancelar_href="#" password_href=usuario.password_href %}
-        {% include "panel/_usuario_form_fields.html" %}
-      {% endwith %}
-    </form>
-  </div>
-</div>
-<div id="password-usuario-{{ usuario.pk }}" class="modal-overlay{% if usuario.password_modal_forzado_abierto %} is-open{% endif %}">
-  <div class="modal-box modal-box-form">
-    <h2>Cambiar contraseña de {{ usuario.username }}</h2>
-    <form method="post" action="{% url 'panel:usuario_password' usuario.pk %}" novalidate>
-      {% with form=usuario.password_form cancelar_href=usuario.editar_href %}
-        {% include "panel/_usuario_password_form_fields.html" %}
-      {% endwith %}
-    </form>
-  </div>
-</div>
-<div id="borrar-usuario-{{ usuario.pk }}" class="modal-overlay">
-  <div class="modal-box">
-    <h3>¿Eliminar "{{ usuario.username }}"?</h3>
-    <p>Esta acción no se puede deshacer.</p>
-    <div class="modal-actions">
-      <a class="btn btn-secondary" href="#">Cancelar</a>
-      <form method="post" action="{% url 'panel:usuario_eliminar' usuario.pk %}">
-        {% csrf_token %}
-        <button class="btn btn-danger" type="submit">Eliminar usuario</button>
-      </form>
+{% block capas %}
+<dialog class="capa capa--lateral" id="nuevoUsuario" aria-labelledby="nuevoUsuario-t"{% if form.errors %} data-abrir-al-cargar{% endif %}>
+  <div class="capa__velo"></div>
+  <form class="lateral" method="post" action="{% url 'panel:usuario_crear' %}" novalidate data-formulario-envio>
+    {% csrf_token %}
+    <div class="lateral__cabecera">
+      <div style="flex:1;min-width:0"><h2 class="lateral__titulo" id="nuevoUsuario-t">Nuevo usuario</h2><p class="lateral__subtitulo">Usuario de sucursal</p></div>
+      <button class="boton-icono boton-icono--cerrar boton-icono--cerrar-chico" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
     </div>
+    <div class="lateral__cuerpo">
+      {% for e in form.non_field_errors %}<div class="mensaje mensaje--error" role="alert">{% icono "x-circle-fill" %}<span class="mensaje__texto">{{ e }}</span></div>{% endfor %}
+      <section class="bloque">
+        <div class="bloque__titulo">{% icono "user" %}Datos de la cuenta</div>
+        <label class="campo">Usuario
+          {{ form.username|campo:"entrada entrada--media" }}
+          {% for e in form.username.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        </label>
+        <div class="campos-2">
+          <label class="campo">Nombre {{ form.first_name|campo:"entrada entrada--media" }}</label>
+          <label class="campo">Apellido {{ form.last_name|campo:"entrada entrada--media" }}</label>
+        </div>
+      </section>
+      <section class="bloque">
+        <div class="bloque__titulo">{% icono "lock-simple" %}Contraseña</div>
+        <label class="campo">Contraseña
+          {{ form.password1|campo:"entrada entrada--media" }}
+          <span class="campo__ayuda">Al menos 8 caracteres, no solo números, no común ni parecida al usuario.</span>
+          {% for e in form.password1.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        </label>
+        <label class="campo">Repetir contraseña
+          {{ form.password2|campo:"entrada entrada--media" }}
+          {% for e in form.password2.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        </label>
+      </section>
+      <section class="bloque">
+        <div class="bloque__titulo">{% icono "storefront" %}Sucursales a las que puede entrar</div>
+        <div class="casillas">
+          {% for opcion in form.sucursales %}
+            <label class="casilla">{{ opcion.tag }}<span class="casilla__texto">{{ opcion.choice_label }}</span>{% if not opcion.data.value.instance.activo %}<span class="casilla__extra casilla__extra--aviso">inactiva</span>{% endif %}</label>
+          {% endfor %}
+        </div>
+        <p class="campo__ayuda">Solo podrá trabajar en las que estén activas. Sin ninguna marcada, puede entrar pero no ve datos.</p>
+      </section>
+      <p class="campo__ayuda">Se crea como usuario de sucursal, activo. Los administradores generales se crean fuera del panel.</p>
+    </div>
+    <div class="lateral__pie">
+      <button class="boton boton--grande lateral__guardar" type="submit" data-texto-envio="Creando…">Crear usuario</button>
+      <button class="boton boton--secundario boton--grande lateral__cancelar" type="button" data-cerrar>Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+{% for u in usuarios %}
+<dialog class="capa capa--modal" id="editar-usuario-{{ u.pk }}" aria-label="Editar usuario {{ u.username }}"{% if u.modal_forzado_abierto %} data-abrir-al-cargar{% endif %}>
+  <div class="capa__velo"></div>
+  <form class="modal modal--ancho" method="post" action="{% url 'panel:usuario_editar' u.pk %}" novalidate>
+    {% with form=u.edit_form usuario_pk=u.pk %}{% include "panel/_usuario_form_fields.html" %}{% endwith %}
+  </form>
+</dialog>
+<dialog class="capa capa--modal" id="password-usuario-{{ u.pk }}" aria-label="Cambiar contraseña de {{ u.username }}"{% if u.password_modal_forzado_abierto %} data-abrir-al-cargar{% endif %}>
+  <div class="capa__velo"></div>
+  <form class="modal" method="post" action="{% url 'panel:usuario_password' u.pk %}" novalidate>
+    {% with form=u.password_form nombre_usuario=u.username %}{% include "panel/_usuario_password_form_fields.html" %}{% endwith %}
+  </form>
+</dialog>
+<dialog class="capa capa--modal" id="borrar-usuario-{{ u.pk }}" aria-labelledby="borrar-usuario-{{ u.pk }}-t">
+  <div class="capa__velo"></div>
+  <div class="modal">
+    <h2 class="titulo-dialogo" id="borrar-usuario-{{ u.pk }}-t">¿Eliminar «{{ u.username }}»?</h2>
+    <p class="modal__texto">Esta acción no se puede deshacer. Si solo querés impedir que entre, podés desactivarlo.</p>
+    <form class="modal__acciones" method="post" action="{% url 'panel:usuario_eliminar' u.pk %}">
+      {% csrf_token %}
+      <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+      <button class="boton boton--peligro" type="submit">Eliminar usuario</button>
+    </form>
   </div>
-</div>
+</dialog>
 {% endfor %}
 {% endblock %}

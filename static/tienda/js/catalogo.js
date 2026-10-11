@@ -1,56 +1,44 @@
-// Listados de productos: rubros y grillas del inicio; búsqueda, filtros,
-// orden y resultados del catálogo. El estado de los filtros se refleja en
-// la URL para poder compartirla.
+// Listados de productos: categorías, ofertas y destacados del inicio;
+// búsqueda, filtros, orden y resultados del catálogo. El estado de los
+// filtros se refleja en la URL para poder compartirla.
 import { CONFIG } from "./config.js";
-import { esOferta, estado, estadoStock, nombreSucursal } from "./estado.js";
+import { ORDENES, esOferta, estado, estadoStock, nombreSucursal } from "./estado.js";
 import { tarjetaHTML } from "./tarjetas.js";
 import { esc, icono, normalizeText, productosLabel } from "./utils.js";
 
 // Filtros especiales. Usan los campos que edita el panel (oferta, destacado,
 // nuevo) y el stock de la sucursal elegida.
 const FILTROS = [
-  { valor: "ofertas", etiqueta: "Ofertas", aplica: esOferta, clase: "chip--oferta" },
+  { valor: "ofertas", etiqueta: "Ofertas", aplica: esOferta },
   { valor: "destacados", etiqueta: "Destacados", aplica: (p) => p.destacado },
   { valor: "nuevos", etiqueta: "Nuevos", aplica: (p) => p.nuevo },
   { valor: "con-stock", etiqueta: "Con stock", aplica: (p) => estadoStock(p).disponible },
 ];
 // Valores de las URLs del sitio anterior (?tag=offer, ?category=...).
 const FILTROS_LEGACY = { offer: "ofertas", best: "destacados", new: "nuevos" };
-
-const porNombre = (a, b) => a.name.localeCompare(b.name, "es");
-const disponiblesPrimero = (a, b) => estadoStock(b).disponible - estadoStock(a).disponible;
-const ORDENES = {
-  destacados: (a, b) => disponiblesPrimero(a, b) || b.destacado - a.destacado || porNombre(a, b),
-  "precio-asc": (a, b) => a.price - b.price || porNombre(a, b),
-  "precio-desc": (a, b) => b.price - a.price || porNombre(a, b),
-  nuevos: (a, b) => b.nuevo - a.nuevo || b.id - a.id,
-  nombre: porNombre,
-};
+const ETIQUETAS_ORDEN = { "precio-asc": "Menor precio", "precio-desc": "Mayor precio", nuevos: "Novedades", nombre: "Nombre (A-Z)" };
 const ORDEN_INICIAL = "destacados";
-
-const ICONOS_CATEGORIA = {
-  "cereales": "bowl-food",
-  "frutos secos": "acorn",
-  "semillas": "plant",
-  "suplementos": "pill",
-  "sin tacc": "grains-slash",
-  "harinas": "grains",
-  "snacks saludables": "cookie",
-};
 
 const filtros = { categoria: "", especial: "", busqueda: "", orden: ORDEN_INICIAL };
 
+const $ = (id) => document.getElementById(id);
 const els = {
-  rubros: document.getElementById("listaRubros"),
-  ofertas: document.getElementById("gridOfertas"),
-  destacados: document.getElementById("gridDestacados"),
-  grilla: document.getElementById("gridCatalogo"),
-  buscar: document.getElementById("buscar"),
-  chipsCategorias: document.getElementById("chipsCategorias"),
-  chipsFiltros: document.getElementById("chipsFiltros"),
-  orden: document.getElementById("orden"),
-  conteo: document.getElementById("conteo"),
-  limpiar: document.getElementById("limpiarFiltros"),
+  categorias: $("listaCategorias"),
+  errorInicio: $("errorInicio"),
+  cargandoInicio: $("cargandoInicio"),
+  seccionOfertas: $("seccionOfertas"),
+  seccionDestacados: $("seccionDestacados"),
+  ofertas: $("gridOfertas"),
+  destacados: $("gridDestacados"),
+  grilla: $("gridCatalogo"),
+  buscar: $("buscar"),
+  borrar: $("borrarBusqueda"),
+  chipsCategorias: $("chipsCategorias"),
+  chipsFiltros: $("chipsFiltros"),
+  orden: $("orden"),
+  conteo: $("conteo"),
+  activos: $("filtrosActivos"),
+  limpiar: $("limpiarFiltros"),
 };
 
 export const esPaginaCatalogo = Boolean(els.grilla);
@@ -59,34 +47,46 @@ function urlCatalogo(params) {
   return `${CONFIG.urls.catalogo}?${new URLSearchParams(params)}`;
 }
 
-function iconoCategoria(nombre) {
-  return ICONOS_CATEGORIA[normalizeText(nombre)] || "package";
-}
-
 /* ---------- Inicio ---------- */
 
-function renderRubros() {
-  if (!els.rubros) return;
-  const ofertas = `<li><a class="rubro rubro--oferta" href="${esc(urlCatalogo({ filtro: "ofertas" }))}"><span>${icono("tag")}</span>Ofertas</a></li>`;
-  els.rubros.innerHTML = ofertas + estado.categorias.map((c) => `
-    <li><a class="rubro" href="${esc(urlCatalogo({ categoria: c.name }))}"><span>${icono(iconoCategoria(c.name))}</span>${esc(c.name)}</a></li>`).join("");
+function burbujaHTML({ nombre, imagen, url }) {
+  const foto = imagen
+    ? `<img class="burbuja__imagen" src="${esc(imagen)}" alt="" loading="lazy" decoding="async">`
+    : `<span class="burbuja__imagen burbuja__imagen--vacia">${icono("package")}</span>`;
+  return `<a class="burbuja" href="${esc(url)}">${foto}<span class="burbuja__nombre">${esc(nombre)}</span></a>`;
 }
 
-function renderGrillaInicio(contenedor, productos, vacio) {
-  if (!contenedor) return;
+function renderCategorias(ordenados, ofertas) {
+  if (!els.categorias) return;
+  const burbujas = [{ nombre: "Ofertas", imagen: ofertas[0]?.image || CONFIG.imagenes["frutos-secos"], url: urlCatalogo({ filtro: "ofertas" }) }];
+  const categorias = [...estado.categorias].sort((a, b) => a.name.localeCompare(b.name, "es"));
+  for (const c of categorias) {
+    const primero = ordenados.find((p) => p.category === c.name && p.image);
+    burbujas.push({ nombre: c.name, imagen: primero?.image || "", url: urlCatalogo({ categoria: c.name }) });
+  }
+  els.categorias.innerHTML = burbujas.map(burbujaHTML).join("");
+}
+
+function renderCarril(seccion, contenedor, productos, vacio) {
+  if (!seccion) return;
+  seccion.hidden = false;
+  seccion.querySelector("[data-con-productos]").hidden = productos.length === 0;
   contenedor.innerHTML = productos.length
     ? productos.map((p) => tarjetaHTML(p)).join("")
-    : `<p class="vacio">${esc(vacio)}</p>`;
+    : `<div class="vacio">${esc(vacio)}</div>`;
 }
 
 function renderInicio() {
-  renderRubros();
+  if (!els.cargandoInicio) return;
+  els.cargandoInicio.hidden = true;
+  els.errorInicio.hidden = true;
   const ordenados = [...estado.productos].sort(ORDENES.destacados);
   const ofertas = ordenados.filter(esOferta).slice(0, 4);
   // Destacados no repite lo que ya se ve en ofertas.
   const destacados = ordenados.filter((p) => p.destacado && !ofertas.includes(p)).slice(0, 8);
-  renderGrillaInicio(els.ofertas, ofertas, `No hay ofertas en ${nombreSucursal()} por ahora.`);
-  renderGrillaInicio(els.destacados, destacados, `No hay productos destacados en ${nombreSucursal()}.`);
+  renderCategorias(ordenados, ofertas);
+  renderCarril(els.seccionOfertas, els.ofertas, ofertas, `No hay ofertas en ${nombreSucursal()} por ahora.`);
+  renderCarril(els.seccionDestacados, els.destacados, destacados, `No hay productos destacados en ${nombreSucursal()}.`);
 }
 
 /* ---------- Catálogo ---------- */
@@ -107,13 +107,14 @@ function productosVisibles() {
     .sort(ORDENES[filtros.orden] || ORDENES[ORDEN_INICIAL]);
 }
 
-function chip({ valor, etiqueta, activo, clase = "", dato }) {
-  return `<button class="chip ${clase}" type="button" data-${dato}="${esc(valor)}" aria-pressed="${activo}">${esc(etiqueta)}</button>`;
+function chip({ valor, etiqueta, activo, dato }) {
+  return `<button class="chip" type="button" data-${dato}="${esc(valor)}" aria-pressed="${activo}">${esc(etiqueta)}</button>`;
 }
 
 function renderChips() {
   if (els.chipsCategorias) {
-    const opciones = [{ valor: "", etiqueta: "Todo" }, ...estado.categorias.map((c) => ({ valor: c.name, etiqueta: c.name }))];
+    const categorias = [...estado.categorias].sort((a, b) => a.name.localeCompare(b.name, "es"));
+    const opciones = [{ valor: "", etiqueta: "Todo" }, ...categorias.map((c) => ({ valor: c.name, etiqueta: c.name }))];
     els.chipsCategorias.innerHTML = opciones.map((o) => chip({ ...o, activo: o.valor === filtros.categoria, dato: "categoria" })).join("");
   }
   if (els.chipsFiltros) {
@@ -121,29 +122,48 @@ function renderChips() {
   }
 }
 
+function filtrosActivos() {
+  const termino = filtros.busqueda.trim();
+  return [
+    termino && { etiqueta: `“${termino}”`, quitar: "busqueda" },
+    filtros.categoria && { etiqueta: filtros.categoria, quitar: "categoria" },
+    filtros.especial && { etiqueta: FILTROS.find((f) => f.valor === filtros.especial).etiqueta, quitar: "especial" },
+    filtros.orden !== ORDEN_INICIAL && { etiqueta: `Orden: ${ETIQUETAS_ORDEN[filtros.orden]}`, quitar: "orden" },
+  ].filter(Boolean);
+}
+
+function renderBarra(visibles) {
+  const total = estado.productos.length;
+  if (els.conteo) els.conteo.textContent = hayFiltros() ? `${visibles} de ${productosLabel(total)}` : productosLabel(total);
+  const activos = filtrosActivos();
+  if (els.activos) {
+    els.activos.innerHTML = activos.map((f) => `
+      <span class="filtro-activo">${esc(f.etiqueta)}<button type="button" data-quitar-filtro="${f.quitar}" aria-label="Quitar filtro ${esc(f.etiqueta)}">${icono("x")}</button></span>`).join("");
+  }
+  if (els.limpiar) els.limpiar.hidden = activos.length === 0;
+  if (els.borrar) els.borrar.hidden = !filtros.busqueda;
+}
+
 function mensajeVacio() {
   const termino = filtros.busqueda.trim();
-  const detalle = termino ? `No hay resultados para “${esc(termino)}”` : "No hay productos con estos filtros";
+  const titulo = termino ? `No hay resultados para “${esc(termino)}”` : "No hay productos con estos filtros";
   return `
-    <div class="vacio">
+    <div class="vacio" style="grid-column:1/-1">
       ${icono("magnifying-glass")}
-      <b>${detalle}</b>
-      <p>en ${esc(nombreSucursal())}. Probá con otra palabra o mirá todo el catálogo.</p>
-      <button class="boton boton--marca" type="button" data-limpiar-filtros>Ver todo el catálogo</button>
+      <p class="vacio__titulo">${titulo}</p>
+      <p class="vacio__texto">en ${esc(nombreSucursal())}. Probá con otra palabra o sacá algún filtro.</p>
+      <button class="boton" type="button" data-ver-todo>Ver todo el catálogo</button>
     </div>`;
 }
 
 function renderResultados() {
-  if (!els.grilla) return;
+  if (!els.grilla || !estado.catalogoCargado) return;
   const visibles = productosVisibles();
-  const total = estado.productos.length;
+  els.grilla.removeAttribute("aria-busy");
   els.grilla.innerHTML = visibles.length
     ? visibles.map((p, i) => tarjetaHTML(p, { eager: i < 4 })).join("")
     : mensajeVacio();
-  if (els.conteo) {
-    els.conteo.textContent = hayFiltros() ? `${visibles.length} de ${productosLabel(total)}` : productosLabel(total);
-  }
-  if (els.limpiar) els.limpiar.hidden = !hayFiltros();
+  renderBarra(visibles.length);
 }
 
 function sincronizarURL() {
@@ -156,7 +176,7 @@ function sincronizarURL() {
   }
   history.replaceState(history.state, "", url);
   // "Ofertas" del menú queda marcado solo con ese filtro activo.
-  document.querySelectorAll(".nav [data-nav]").forEach((link) => {
+  document.querySelectorAll(".cabecera__nav [data-nav]").forEach((link) => {
     const activo = link.dataset.nav === (filtros.especial === "ofertas" ? "ofertas" : "catalogo");
     if (activo) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
@@ -169,11 +189,26 @@ function aplicarCambio() {
   sincronizarURL();
 }
 
-function limpiarFiltros() {
+function limpiar({ orden = false } = {}) {
   filtros.categoria = "";
   filtros.especial = "";
   filtros.busqueda = "";
+  if (orden) filtros.orden = ORDEN_INICIAL;
   if (els.buscar) els.buscar.value = "";
+  if (els.orden) els.orden.value = filtros.orden;
+  aplicarCambio();
+}
+
+function quitarFiltro(cual) {
+  if (cual === "busqueda") {
+    filtros.busqueda = "";
+    if (els.buscar) els.buscar.value = "";
+  } else if (cual === "orden") {
+    filtros.orden = ORDEN_INICIAL;
+    if (els.orden) els.orden.value = ORDEN_INICIAL;
+  } else {
+    filtros[cual] = "";
+  }
   aplicarCambio();
 }
 
@@ -201,30 +236,63 @@ export function renderListados() {
   renderInicio();
   if (esPaginaCatalogo) {
     validarCategoria();
-    renderChips();
-    renderResultados();
-    sincronizarURL();
+    aplicarCambio();
   }
 }
 
-export function mostrarErrorCarga(texto = "No pudimos cargar los productos. Revisá la conexión y recargá la página.") {
-  const html = `<div class="vacio">${icono("warning-circle")}<b>Algo salió mal</b><p>${esc(texto)}</p></div>`;
-  [els.grilla, els.ofertas, els.destacados].forEach((el) => { if (el) el.innerHTML = html; });
-  if (els.rubros) els.rubros.innerHTML = "";
-  if (els.conteo) els.conteo.textContent = "";
+export function mostrarCargando() {
+  if (els.cargandoInicio) {
+    els.cargandoInicio.hidden = false;
+    els.errorInicio.hidden = true;
+    els.seccionOfertas.hidden = true;
+    els.seccionDestacados.hidden = true;
+  }
+  if (els.grilla) {
+    els.grilla.setAttribute("aria-busy", "true");
+    els.grilla.innerHTML = Array.from({ length: 6 }, () => `
+      <div class="tarjeta-esqueleto" aria-hidden="true"><div class="tarjeta-esqueleto__imagen"></div><div class="tarjeta-esqueleto__linea" style="width:80%"></div><div class="tarjeta-esqueleto__linea" style="width:40%"></div><div class="tarjeta-esqueleto__boton"></div></div>`).join("");
+  }
+}
+
+export function mostrarErrorCarga() {
+  if (els.cargandoInicio) {
+    els.cargandoInicio.hidden = true;
+    els.errorInicio.hidden = false;
+    els.seccionOfertas.hidden = true;
+    els.seccionDestacados.hidden = true;
+    els.categorias.innerHTML = "";
+  }
+  if (els.grilla) {
+    els.grilla.removeAttribute("aria-busy");
+    els.grilla.innerHTML = `
+      <div class="falla" role="alert" style="grid-column:1/-1">${icono("cloud-slash")}<div><p class="falla__titulo">Algo salió mal</p><p class="texto-2" style="margin-top:4px">No pudimos cargar los productos. Revisá la conexión y recargá la página.</p></div></div>`;
+    if (els.conteo) els.conteo.textContent = "";
+  }
+}
+
+// Flechas de los carriles: desplazan el carril de su sección.
+function moverCarril(boton) {
+  const pista = boton.closest("section")?.querySelector("[data-carril-pista]");
+  if (!pista) return;
+  const reducido = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  pista.scrollBy({ left: Number(boton.dataset.carril) * pista.clientWidth * 0.85, behavior: reducido ? "auto" : "smooth" });
 }
 
 export function iniciarCatalogo() {
+  document.addEventListener("click", (event) => {
+    const flecha = event.target.closest("[data-carril]");
+    if (flecha) moverCarril(flecha);
+  });
   els.chipsCategorias?.addEventListener("click", (event) => {
     const boton = event.target.closest("[data-categoria]");
     if (!boton) return;
-    filtros.categoria = boton.dataset.categoria;
+    // Tocar la categoría activa la desactiva ("Todo").
+    filtros.categoria = filtros.categoria === boton.dataset.categoria ? "" : boton.dataset.categoria;
     aplicarCambio();
   });
   els.chipsFiltros?.addEventListener("click", (event) => {
     const boton = event.target.closest("[data-filtro]");
     if (!boton) return;
-    // Tocar el filtro activo lo desactiva.
     filtros.especial = filtros.especial === boton.dataset.filtro ? "" : boton.dataset.filtro;
     aplicarCambio();
   });
@@ -233,15 +301,20 @@ export function iniciarCatalogo() {
     renderResultados();
     sincronizarURL();
   });
+  els.borrar?.addEventListener("click", () => {
+    quitarFiltro("busqueda");
+    els.buscar.focus();
+  });
   els.orden?.addEventListener("change", (event) => {
     filtros.orden = event.target.value;
-    renderResultados();
-    sincronizarURL();
+    aplicarCambio();
   });
-  els.limpiar?.addEventListener("click", limpiarFiltros);
+  els.activos?.addEventListener("click", (event) => {
+    const boton = event.target.closest("[data-quitar-filtro]");
+    if (boton) quitarFiltro(boton.dataset.quitarFiltro);
+  });
+  els.limpiar?.addEventListener("click", () => limpiar({ orden: true }));
   els.grilla?.addEventListener("click", (event) => {
-    if (event.target.closest("[data-limpiar-filtros]")) limpiarFiltros();
+    if (event.target.closest("[data-ver-todo]")) limpiar();
   });
-  // Desde el ícono de búsqueda del inicio en celular (/catalogo/#buscar).
-  if (els.buscar && window.location.hash === "#buscar") els.buscar.focus();
 }

@@ -1,8 +1,13 @@
 {% load tienda %}
-<dialog class="panel panel--centro" id="dialogoProducto" aria-labelledby="detalleTitulo">
-  <header class="panel__cabeza">
-    <div><p class="panel__sub" id="detalleCategoria"></p></div>
-    <button class="boton-icono" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
-  </header>
-  <div class="panel__cuerpo" id="detalleContenido"></div>
+<dialog class="capa capa--hoja" id="dialogoProducto" aria-labelledby="detalleTitulo">
+  <div class="capa__velo"></div>
+  <div class="hoja hoja--ancha">
+    <div class="hoja__agarre" aria-hidden="true"></div>
+    <div class="hoja-detalle">
+      <div class="hoja-detalle__cerrar">
+        <button class="boton-icono boton-icono--cerrar" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
+      </div>
+      <div id="detalleContenido"></div>
+    </div>
+  </div>
 </dialog>

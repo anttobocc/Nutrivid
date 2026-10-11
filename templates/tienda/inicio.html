@@ -1,79 +1,101 @@
 {% extends "tienda/base.html" %}
 {% load static tienda %}
 
-{% block title %}Nutrivid Corrientes | Dietética con pedidos por WhatsApp{% endblock %}
-{% block estilos %}
-    <link rel="stylesheet" href="{% static 'tienda/css/carrusel.css' %}">
-    <link rel="stylesheet" href="{% static 'tienda/css/inicio.css' %}">
-{% endblock %}
+{% block estilos %}<link rel="stylesheet" href="{% static 'tienda/css/inicio.css' %}">{% endblock %}
 
 {% block contenido %}
-<section class="portada contenedor" aria-labelledby="portadaTitulo">
-  <div class="portada__texto">
-    <h1 id="portadaTitulo">Precios de tu sucursal, <em>pedido por WhatsApp</em>.</h1>
-    <p class="portada__bajada">Frutos secos, semillas, harinas y suplementos. Te confirmamos stock y total antes de prepararlo.</p>
-    <form class="buscador" action="{% url 'productos:catalogo' %}" method="get" role="search">
-      {% icono "magnifying-glass" %}
-      <label class="sr-only" for="buscarPortada">Buscar productos</label>
-      <input id="buscarPortada" name="q" type="search" placeholder="Buscar productos" autocomplete="off" enterkeyhint="search">
-      <button class="boton boton--marca" type="submit">Buscar</button>
-    </form>
-  </div>
+<section class="portada" aria-label="Portada">
+  <div class="portada__fila">
+    <div class="portada__texto">
+      <h1 class="portada__titulo">Armá tu pedido acá <span>y lo coordinamos por WhatsApp.</span></h1>
+      <p class="portada__bajada">Te confirmamos total y disponibilidad por chat.</p>
+      <form class="portada__buscar" action="{% url 'productos:catalogo' %}" method="get" role="search">
+        <label class="portada__campo">
+          {% icono "magnifying-glass" %}
+          <span class="sr-only">Buscar productos</span>
+          <input name="q" type="search" placeholder="Buscar productos, marcas…" autocomplete="off" enterkeyhint="search">
+        </label>
+        <button class="boton boton--salvia portada__boton" type="submit">Buscar</button>
+      </form>
+      <ol class="portada__pasos" aria-label="Cómo pedir">
+        <li><span class="portada__paso">1</span>Elegí productos</li>
+        <li><span class="portada__paso">2</span>Enviá el pedido</li>
+        <li><span class="portada__paso portada__paso--rosa">3</span>Confirmamos por WhatsApp</li>
+      </ol>
+    </div>
 
-  <div class="carrusel" id="carrusel" role="region" aria-roledescription="carrusel" aria-label="Promociones">
-    <div class="carrusel__pista" id="carruselPista" tabindex="0" aria-live="off">
-      <div class="promo esqueleto" aria-hidden="true">
-        <div class="promo__texto" style="width:100%">
-          <span class="esqueleto__linea" style="width:30%"></span>
-          <span class="esqueleto__linea" style="width:90%;height:28px"></span>
-          <span class="esqueleto__linea" style="width:70%"></span>
+    <div class="carrusel" id="carrusel" role="region" aria-roledescription="carrusel" aria-label="Promociones" tabindex="0">
+      <div class="carrusel__pista" id="carruselPista"></div>
+      <div class="carrusel__pie">
+        <div class="carrusel__puntos" id="carruselPuntos"></div>
+        <div class="carrusel__flechas">
+          <button class="carrusel__flecha" type="button" data-promo-anterior aria-label="Promo anterior">{% icono "arrow-left" %}</button>
+          <button class="carrusel__flecha" type="button" data-promo-siguiente aria-label="Promo siguiente">{% icono "arrow-right" %}</button>
         </div>
-        <div class="promo__imagen"></div>
       </div>
     </div>
-    <div class="carrusel__controles">
-      <button class="boton-icono" type="button" id="carruselAnterior" aria-label="Promoción anterior">{% icono "caret-left" %}</button>
-      <div class="carrusel__puntos" id="carruselPuntos"></div>
-      <button class="boton-icono" type="button" id="carruselSiguiente" aria-label="Promoción siguiente">{% icono "caret-right" %}</button>
+  </div>
+</section>
+
+<div class="contenedor-tienda inicio">
+  <form class="inicio__buscar" action="{% url 'productos:catalogo' %}" method="get" role="search">
+    <label class="buscador inicio__buscador">
+      {% icono "magnifying-glass" %}
+      <span class="sr-only">Buscar productos</span>
+      <input name="q" type="search" enterkeyhint="search" placeholder="Buscar productos" data-placeholder-sucursal autocomplete="off">
+    </label>
+  </form>
+
+  <section class="seccion-inicio categorias" aria-labelledby="h-cat">
+    <div class="seccion-inicio__cabeza">
+      <h2 class="titulo-seccion" id="h-cat">Categorías</h2>
+      <div class="flechas categorias__flechas">
+        <button class="boton-icono boton-icono--flecha" type="button" data-carril="-1" aria-label="Categorías anteriores">{% icono "caret-left" %}</button>
+        <button class="boton-icono boton-icono--flecha" type="button" data-carril="1" aria-label="Categorías siguientes">{% icono "caret-right" %}</button>
+      </div>
     </div>
-  </div>
-</section>
+    <div class="carril burbujas" id="listaCategorias" data-carril-pista>
+      {% for _ in "123456" %}
+        <div class="burbuja burbuja--esqueleto" aria-hidden="true"><span class="esqueleto esqueleto--pulso burbuja__imagen"></span><span class="esqueleto burbuja__texto-esqueleto"></span></div>
+      {% endfor %}
+    </div>
+  </section>
 
-<section class="seccion contenedor" id="categorias" aria-labelledby="categoriasTitulo">
-  <div class="seccion__cabeza"><h2 id="categoriasTitulo">Categorías</h2></div>
-  <ul class="rubros" id="listaRubros">
-    {% for _ in "12345678" %}<li class="rubro esqueleto" aria-hidden="true"><span class="esqueleto__linea" style="width:48px;height:48px;border-radius:50%"></span><span class="esqueleto__linea" style="width:70%"></span></li>{% endfor %}
-  </ul>
-</section>
+  <div class="falla" id="errorInicio" role="alert" hidden>
+    {% icono "cloud-slash" %}
+    <div><p class="falla__titulo">Algo salió mal</p><p class="texto-2 falla__texto">No pudimos cargar los productos. Revisá la conexión y recargá la página.</p></div>
+  </div>
 
-<section class="seccion contenedor" aria-labelledby="ofertasTitulo">
-  <div class="seccion__cabeza">
-    <h2 id="ofertasTitulo">En oferta</h2>
-    <a class="enlace" href="{% url 'productos:catalogo' %}?filtro=ofertas">Ver todas</a>
-  </div>
-  <div class="fila-productos" id="gridOfertas">
-    {% for _ in "1234" %}{% include "tienda/parciales/_esqueleto_tarjeta.html" %}{% endfor %}
-  </div>
-</section>
+  <section class="seccion-inicio" id="cargandoInicio" aria-busy="true" aria-label="Cargando productos">
+    <div class="esqueleto cargando__titulo"></div>
+    <div class="grilla-esqueleto">
+      {% for _ in "1234" %}{% include "tienda/parciales/_tarjeta_esqueleto.html" %}{% endfor %}
+    </div>
+  </section>
 
-<section class="seccion contenedor" aria-labelledby="destacadosTitulo">
-  <div class="seccion__cabeza">
-    <h2 id="destacadosTitulo">Destacados</h2>
-    <a class="enlace" href="{% url 'productos:catalogo' %}">Ver catálogo</a>
-  </div>
-  <div class="grilla-productos" id="gridDestacados">
-    {% for _ in "12345678" %}{% include "tienda/parciales/_esqueleto_tarjeta.html" %}{% endfor %}
-  </div>
-</section>
+  <section class="seccion-inicio" id="seccionOfertas" aria-labelledby="h-ofertas" hidden>
+    <div class="seccion-inicio__cabeza">
+      <h2 class="titulo-seccion" id="h-ofertas">Ofertas</h2>
+      <div class="flechas" data-con-productos>
+        <a class="enlace" href="{% url 'productos:catalogo' %}?filtro=ofertas">Ver ofertas</a>
+        <button class="boton-icono boton-icono--flecha" type="button" data-carril="-1" aria-label="Anteriores">{% icono "caret-left" %}</button>
+        <button class="boton-icono boton-icono--flecha" type="button" data-carril="1" aria-label="Siguientes">{% icono "caret-right" %}</button>
+      </div>
+    </div>
+    <div class="carril carril-productos" id="gridOfertas" data-carril-pista></div>
+  </section>
 
-<section class="pasos" aria-labelledby="pasosTitulo">
-  <div class="contenedor">
-    <h2 id="pasosTitulo">Cómo hacer tu pedido</h2>
-    <ol>
-      <li><h3>Elegí tu sucursal</h3><p>Ves los precios y el stock de esa sucursal.</p></li>
-      <li><h3>Armá el pedido</h3><p>Sumá productos y agregá una nota si necesitás algo puntual.</p></li>
-      <li><h3>Envialo por WhatsApp</h3><p>Te confirmamos stock, total y cómo retirarlo o recibirlo.</p></li>
-    </ol>
-  </div>
-</section>
+  <section class="seccion-inicio" id="seccionDestacados" aria-labelledby="h-destacados" hidden>
+    <div class="seccion-inicio__cabeza">
+      <h2 class="titulo-seccion" id="h-destacados">Destacados</h2>
+      <div class="flechas" data-con-productos>
+        <a class="enlace" href="{% url 'productos:catalogo' %}?filtro=destacados">Ver destacados</a>
+        <button class="boton-icono boton-icono--flecha" type="button" data-carril="-1" aria-label="Anteriores">{% icono "caret-left" %}</button>
+        <button class="boton-icono boton-icono--flecha" type="button" data-carril="1" aria-label="Siguientes">{% icono "caret-right" %}</button>
+      </div>
+    </div>
+    <div class="carril carril-productos" id="gridDestacados" data-carril-pista></div>
+  </section>
+
+</div>
 {% endblock %}

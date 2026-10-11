@@ -1,13 +1,18 @@
 {% load tienda %}
-<dialog class="panel panel--centro panel--chico" id="dialogoSucursal" aria-labelledby="sucursalTitulo">
-  <header class="panel__cabeza">
-    <div>
-      <h2 id="sucursalTitulo">Elegí tu sucursal</h2>
-      <p class="panel__sub">Vas a ver los precios y el stock de esa sucursal.</p>
+<dialog class="capa capa--hoja" id="dialogoSucursal" aria-labelledby="sucursalTitulo">
+  <div class="capa__velo"></div>
+  <div class="hoja">
+    <div class="hoja__agarre" aria-hidden="true"></div>
+    <div class="hoja-sucursal">
+      <div class="hoja__cabeza">
+        <div>
+          <h2 class="hoja__titulo" id="sucursalTitulo">¿Dónde comprás?</h2>
+          <p class="hoja__bajada">El catálogo y el stock cambian según la sucursal. El precio es el mismo en todas.</p>
+        </div>
+        <button class="boton-icono boton-icono--cerrar" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
+      </div>
+      <div class="opciones-sucursal" id="listaSucursales"></div>
+      <div class="impacto entra" id="impactoSucursal" hidden></div>
     </div>
-    <button class="boton-icono" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
-  </header>
-  <div class="panel__cuerpo">
-    <ul class="sucursales" id="listaSucursales"></ul>
   </div>
 </dialog>

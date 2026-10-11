@@ -1,11 +1,8 @@
 {% extends "panel/base_panel.html" %}
 {% block title %}Editar sucursal | Panel Nutrivid{% endblock %}
 {% block panel_content %}
-<div class="panel-card">
-  <h2>Editar sucursal</h2>
-  {% url 'panel:sucursales' as cancelar_href %}
-  <form method="post">
-    {% include "panel/_sucursal_form_fields.html" %}
-  </form>
-</div>
+{% url 'panel:sucursales' as volver_url %}
+<form class="tarjeta pagina-form" method="post" novalidate>
+  {% include "panel/_sucursal_form_fields.html" %}
+</form>
 {% endblock %}

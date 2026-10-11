@@ -1,16 +1,17 @@
 // Punto de entrada de la tienda pública.
+import { aviso, cerrarCapa } from "../../comun/js/interfaz.js";
 import { cargarCatalogo } from "./api.js";
 import { cargarCarrito, carrito } from "./carrito.js";
 import { actualizarPromos, iniciarCarrusel, renderCarrusel } from "./carrusel.js";
-import { iniciarCatalogo, leerFiltrosURL, mostrarErrorCarga, renderListados } from "./catalogo.js";
-import { abrirDetalle, abrirDetalleDesdeURL, iniciarDetalle } from "./detalle.js";
-import { buscarProducto, estado, estadoStock, nombreSucursal } from "./estado.js";
+import { iniciarCatalogo, leerFiltrosURL, mostrarCargando, mostrarErrorCarga, renderListados } from "./catalogo.js";
+import { abrirDetalle, abrirDetalleDesdeURL, iniciarDetalle, refrescarDetalle } from "./detalle.js";
+import { buscarProducto, estado, estadoStock } from "./estado.js";
 import { abrirPedido, iniciarPedido, renderPedido } from "./pedido.js";
 import { iniciarSucursales, renderSucursales, resolverSucursal } from "./sucursales.js";
 import { actualizarAcciones } from "./tarjetas.js";
-import { aviso, cerrarDialogo, iniciarUI } from "./ui.js";
 
-// Suma o resta unidades respetando el stock de la sucursal.
+// Suma o resta unidades respetando el stock de la sucursal. Si había más
+// unidades guardadas que stock, se parte de lo que se puede pedir.
 function cambiarCantidad(id, delta) {
   const producto = buscarProducto(id);
   if (!producto) {
@@ -18,13 +19,19 @@ function cambiarCantidad(id, delta) {
     return;
   }
   const { maximo } = estadoStock(producto);
-  const nueva = Math.min(carrito.cantidad(id) + delta, maximo);
-  carrito.poner(producto, Math.max(nueva, 0));
+  const actual = Math.min(carrito.cantidad(id), maximo);
+  carrito.poner(producto, Math.max(0, Math.min(maximo, actual + delta)));
+}
+
+async function verPedido() {
+  const abiertas = [...document.querySelectorAll("dialog.capa[open]")].filter((d) => d.id !== "dialogoCarrito");
+  await Promise.all(abiertas.map((d) => cerrarCapa(d)));
+  abrirPedido();
 }
 
 function escucharAcciones() {
   document.addEventListener("click", (event) => {
-    const objetivo = event.target.closest("[data-agregar], [data-sumar], [data-restar], [data-quitar], [data-detalle], [data-abrir-carrito]");
+    const objetivo = event.target.closest("[data-agregar], [data-sumar], [data-restar], [data-quitar], [data-detalle], [data-abrir-carrito], [data-ver-pedido], [data-sin-whatsapp]");
     if (!objetivo) return;
     const { agregar, sumar, restar, quitar, detalle } = objetivo.dataset;
 
@@ -34,9 +41,12 @@ function escucharAcciones() {
       if (abrirDetalle(detalle)) event.preventDefault();
       return;
     }
-    if (objetivo.hasAttribute("data-abrir-carrito")) {
-      document.querySelectorAll("dialog[open]").forEach((d) => { if (d.id !== "dialogoCarrito") cerrarDialogo(d); });
-      abrirPedido();
+    if (objetivo.hasAttribute("data-abrir-carrito") || objetivo.hasAttribute("data-ver-pedido")) {
+      verPedido();
+      return;
+    }
+    if (objetivo.hasAttribute("data-sin-whatsapp")) {
+      aviso("No hay un número de WhatsApp configurado.", "error");
       return;
     }
     if (agregar !== undefined) cambiarCantidad(agregar, 1);
@@ -46,38 +56,40 @@ function escucharAcciones() {
   });
 }
 
-async function cargarDatosSucursal() {
-  const { productos, categorias } = await cargarCatalogo(estado.sucursalActual);
+function usarDatos({ productos, categorias }) {
   estado.productos = productos;
   estado.categorias = categorias;
   estado.catalogoCargado = true;
+  estado.errorCarga = false;
 }
 
 function renderTodo() {
   renderListados();
   renderCarrusel();
   renderPedido();
+  refrescarDetalle();
 }
 
-async function alCambiarSucursal() {
-  try {
-    await cargarDatosSucursal();
-  } catch (error) {
-    console.error("Error al cambiar de sucursal:", error);
-    mostrarErrorCarga();
-    return;
-  }
-  renderTodo();
-  aviso(`Ahora ves precios y stock de ${nombreSucursal()}.`, { icono: "storefront" });
+function alCambiarSucursal(datos) {
+  usarDatos(datos);
+  mostrarCargando();
+  // Breve estado de carga, como al entrar: deja ver que cambió el stock.
+  setTimeout(renderTodo, 250);
+}
+
+function sinSucursales() {
+  estado.sinSucursales = true;
+  renderPedido();
+  document.getElementById("contenidoTienda").hidden = true;
+  document.getElementById("sinSucursales").hidden = false;
 }
 
 async function init() {
   cargarCarrito();
-  iniciarUI();
   iniciarPedido();
   iniciarCatalogo();
   iniciarDetalle();
-  iniciarCarrusel();
+  iniciarCarrusel({ agregar: (id) => cambiarCantidad(id, 1), restar: (id) => cambiarCantidad(id, -1), verPedido });
   iniciarSucursales({ onCambio: alCambiarSucursal });
   escucharAcciones();
   carrito.onChange(() => {
@@ -89,21 +101,25 @@ async function init() {
   leerFiltrosURL();
   renderPedido();
 
+  let avisoSucursal = "";
   try {
-    await resolverSucursal();
+    avisoSucursal = await resolverSucursal();
     renderSucursales();
     if (!estado.sucursalActual) {
-      mostrarErrorCarga("No hay sucursales disponibles en este momento.");
+      sinSucursales();
       return;
     }
-    await cargarDatosSucursal();
+    usarDatos(await cargarCatalogo(estado.sucursalActual));
   } catch (error) {
     console.error("Error al cargar el catálogo:", error);
+    estado.errorCarga = true;
+    renderSucursales();
     mostrarErrorCarga();
     return;
   }
 
   renderTodo();
+  if (avisoSucursal) aviso(avisoSucursal);
   abrirDetalleDesdeURL();
 }
 

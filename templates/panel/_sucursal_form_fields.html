@@ -1,26 +1,31 @@
 {% comment %}
-Campos del formulario de sucursal (nombre/direccion/activa/usuarios) +
-acciones. Se incluye tanto desde la pagina standalone (sucursal_form.html,
-fallback si el modal tiene errores de validacion) como desde el modal de
-edicion en sucursales.html. Espera en el contexto: `form` y `cancelar_href`.
+Campos de "Editar sucursal" (nombre, dirección, usuarios con acceso). Se usa
+en el modal de sucursales.html y en la página suelta sucursal_form.html.
+El estado activa/inactiva no se edita acá: solo desde el interruptor de la lista.
+Espera en el contexto: `form` y, opcionalmente, `volver_url` (página suelta).
 {% endcomment %}
+{% load tienda %}
 {% csrf_token %}
-{{ form.non_field_errors }}
-<div class="field">
-  <label for="{{ form.nombre.id_for_label }}">Nombre *</label>
-  {{ form.nombre }}
-  {{ form.nombre.errors }}
-</div>
-<div class="field">
-  <label for="{{ form.direccion.id_for_label }}">Dirección</label>
-  {{ form.direccion }}
-</div>
-{% if "activo" in form.fields %}<label class="tag-check">{{ form.activo }} Activa</label>{% endif %}
-<div class="field usuarios-checklist">
-  <label>Usuarios con acceso</label>
-  {{ form.usuarios }}
-</div>
-<div class="form-actions">
-  <a class="btn btn-secondary" href="{{ cancelar_href }}">Cancelar</a>
-  <button class="btn btn-primary" type="submit">Guardar</button>
+<h2 class="titulo-dialogo">Editar sucursal</h2>
+{% for e in form.non_field_errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+<label class="campo">Nombre
+  {{ form.nombre|campo }}
+  {% for e in form.nombre.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+</label>
+<label class="campo">Dirección
+  {{ form.direccion|campo }}
+</label>
+<fieldset class="etiquetas">
+  <legend class="etiquetas__titulo">Usuarios con acceso</legend>
+  <div class="casillas casillas--fila">
+    {% for opcion in form.usuarios %}
+      <label class="casilla casilla--chica">{{ opcion.tag }}<span>{{ opcion.choice_label }}</span></label>
+    {% empty %}
+      <p class="campo__ayuda">No hay usuarios de sucursal todavía.</p>
+    {% endfor %}
+  </div>
+</fieldset>
+<div class="modal__acciones">
+  {% if volver_url %}<a class="boton boton--secundario" href="{{ volver_url }}">Cancelar</a>{% else %}<button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>{% endif %}
+  <button class="boton" type="submit">Guardar</button>
 </div>

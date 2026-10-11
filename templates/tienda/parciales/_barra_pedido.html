@@ -1,5 +1,4 @@
-{% load tienda %}
 <div class="barra-pedido" id="barraPedido" hidden>
-  <p class="barra-pedido__resumen"><small id="barraCantidad">0 productos</small><b id="barraTotal">$ 0</b></p>
-  <button class="boton boton--acento" type="button" data-abrir-carrito>Ver pedido{% icono "arrow-right" %}</button>
+  <p class="barra-pedido__texto" aria-live="polite"><span id="barraCantidad">0 productos</span> · <span data-sucursal-nombre></span><br><b id="barraTotal">$ 0</b></p>
+  <button class="boton boton--salvia barra-pedido__boton" type="button" data-abrir-carrito>Ver pedido</button>
 </div>

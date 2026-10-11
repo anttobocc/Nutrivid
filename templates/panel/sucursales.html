@@ -1,135 +1,138 @@
 {% extends "panel/base_panel.html" %}
+{% load tienda %}
 {% block title %}Sucursales | Panel Nutrivid{% endblock %}
-{% block panel_main_class %}panel-main-wide{% endblock %}
 {% block panel_content %}
-<div class="toolbar">
-  <h2>Sucursales ({{ sucursales|length }})</h2>
+<div class="cabeza-seccion">
+  <h1 class="titulo-pagina">Sucursales</h1>
+  <button class="boton" type="button" data-abrir="nuevaSucursal">{% icono "plus" %}Nueva sucursal</button>
 </div>
 
-<div class="split-layout">
-  <div class="split-list">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Nombre</th><th>Dirección</th><th>Usuarios con acceso</th><th>Estado</th><th>Acciones</th></tr>
-        </thead>
-        <tbody>
-          {% for sucursal in sucursales %}
-          <tr>
-            <td><strong>{{ sucursal.nombre }}</strong></td>
-            <td>{{ sucursal.direccion|default:"—" }}</td>
-            <td>
-              {% for u in sucursal.usuarios.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
-            </td>
-            <td class="td-estado">
-              <div class="estado-switch">
-                <form method="post" action="{% url 'panel:sucursal_toggle_activo' sucursal.pk %}" class="activo-form">
-                  {% csrf_token %}
-                  <input
-                    type="checkbox"
-                    class="switch-input"
-                    name="activo"
-                    onchange="this.form.submit()"
-                    {% if sucursal.activo %}checked{% endif %}
-                    title="Sucursal activa"
-                    aria-label="Activar o desactivar {{ sucursal.nombre }}">
-                </form>
-                <span class="estado-texto">{% if sucursal.activo %}Activa{% else %}Inactiva{% endif %}</span>
-              </div>
-            </td>
-            <td class="td-actions">
-              <div class="td-actions-inner">
-                <a class="btn btn-secondary btn-sm" href="#editar-sucursal-{{ sucursal.pk }}">Editar</a>
-                <a class="btn btn-secondary btn-sm" href="#inicializar-sucursal-{{ sucursal.pk }}">Inicializar productos</a>
-                <a class="btn btn-danger btn-sm" href="#borrar-sucursal-{{ sucursal.pk }}">Eliminar</a>
-              </div>
-            </td>
-          </tr>
-          {% empty %}
-          <tr class="empty-row"><td colspan="5">No hay sucursales todavía.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="split-form">
-    <div class="panel-card">
-      <h2>Nueva sucursal</h2>
-      <form method="post" action="{% url 'panel:sucursal_crear' %}">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        <div class="field">
-          <label for="{{ form.nombre.id_for_label }}">Nombre *</label>
-          {{ form.nombre }}
-          {{ form.nombre.errors }}
+<div class="tabla">
+  <div class="tabla__ancho tabla__ancho--sucursales">
+    <div class="tabla__fila tabla__fila--cabeza tabla--sucursales"><span>Sucursal</span><span>Usuarios con acceso</span><span>Datos</span><span>Estado</span><span></span></div>
+    {% for s in sucursales %}
+      <div class="tabla__fila tabla--sucursales">
+        <div>
+          <p class="tabla__nombre tabla__nombre--con-insignia">{{ s.nombre }}{% if sucursal_activa and sucursal_activa.pk == s.pk %}<span class="insignia insignia--salvia insignia--mini">activa en tu sesión</span>{% endif %}</p>
+          <p class="tabla__detalle{% if not s.direccion %} tabla__detalle--tenue{% endif %}">{{ s.direccion|default:"Sin dirección" }}</p>
         </div>
-        <div class="field">
-          <label for="{{ form.direccion.id_for_label }}">Dirección</label>
-          {{ form.direccion }}
+        <span class="tabla__texto">{% for u in s.usuarios.all %}{{ u.username }}{% if not forloop.last %}, {% endif %}{% empty %}Nadie asignado{% endfor %}</span>
+        <span class="tabla__texto">{{ s.cantidad_productos }} productos · {{ s.cantidad_categorias }} categorías</span>
+        <form method="post" action="{% url 'panel:sucursal_toggle_activo' s.pk %}">
+          {% csrf_token %}
+          <button class="interruptor" type="submit" role="switch" aria-checked="{{ s.activo|yesno:'true,false' }}"{% if not s.activo %} name="activo" value="on"{% endif %} aria-label="{{ s.nombre }} {{ s.activo|yesno:'activa,inactiva' }}">
+            <span class="interruptor__pista"></span>{{ s.activo|yesno:"Activa,Inactiva" }}
+          </button>
+        </form>
+        <div class="tabla__acciones tabla__acciones--envolver">
+          <button class="boton boton--secundario boton--chico" type="button" data-abrir="editar-sucursal-{{ s.pk }}">Editar</button>
+          <button class="boton boton--secundario boton--chico{% if s.tiene_inventario %} es-tenue{% endif %}" type="button" data-abrir="inicializar-sucursal-{{ s.pk }}">Inicializar</button>
+          <button class="boton-icono boton-icono--peligro boton-icono--chico" type="button" data-abrir="borrar-sucursal-{{ s.pk }}" aria-label="Eliminar {{ s.nombre }}">{% icono "trash" %}</button>
         </div>
-        {% if "activo" in form.fields %}<label class="tag-check">{{ form.activo }} Activa</label>{% endif %}
-        <div class="field usuarios-checklist">
-          <label>Usuarios con acceso</label>
-          {{ form.usuarios }}
-        </div>
-        <div class="form-actions">
-          <button class="btn btn-primary" type="submit">Crear sucursal</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-{% for sucursal in sucursales %}
-<div id="editar-sucursal-{{ sucursal.pk }}" class="modal-overlay{% if sucursal.modal_forzado_abierto %} is-open{% endif %}">
-  <div class="modal-box modal-box-form">
-    <h2>Editar sucursal</h2>
-    <form method="post" action="{% url 'panel:sucursal_editar' sucursal.pk %}">
-      {% with form=sucursal.edit_form cancelar_href="#" %}
-        {% include "panel/_sucursal_form_fields.html" %}
-      {% endwith %}
-    </form>
-  </div>
-</div>
-<div id="inicializar-sucursal-{{ sucursal.pk }}" class="modal-overlay">
-  <div class="modal-box modal-box-form">
-    <h2>Inicializar sucursal</h2>
-    <p>Destino: <strong>{{ sucursal.nombre }}</strong></p>
-    {% if sucursal.tiene_inventario %}
-      <p>Esta sucursal ya tiene productos cargados. Inicializarla podría crear registros duplicados o modificar su configuración, así que esta acción no está disponible.</p>
-      <div class="form-actions">
-        <a class="btn btn-secondary" href="#">Cerrar</a>
       </div>
-    {% else %}
-      <p>Esta sucursal no tiene productos cargados. Elegí una sucursal existente para copiar su catálogo: se crean las categorías y el inventario para "{{ sucursal.nombre }}", reutilizando los mismos productos globales, con stock inicial en 0.</p>
-      <form method="post" action="{% url 'panel:sucursal_inicializar' sucursal.pk %}">
-        {% csrf_token %}
-        <div class="field">
-          <label for="{{ sucursal.inicializar_form.origen.id_for_label }}">{{ sucursal.inicializar_form.origen.label }}</label>
-          {{ sucursal.inicializar_form.origen }}
-          {{ sucursal.inicializar_form.origen.errors }}
+    {% empty %}
+      <p class="tabla__vacia">No hay sucursales todavía.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block capas %}
+<dialog class="capa capa--lateral" id="nuevaSucursal" aria-labelledby="nuevaSucursal-t"{% if form.errors %} data-abrir-al-cargar{% endif %}>
+  <div class="capa__velo"></div>
+  <form class="lateral" method="post" action="{% url 'panel:sucursal_crear' %}" novalidate data-formulario-envio>
+    {% csrf_token %}
+    <div class="lateral__cabecera">
+      <div style="flex:1;min-width:0"><h2 class="lateral__titulo" id="nuevaSucursal-t">Nueva sucursal</h2><p class="lateral__subtitulo">Toda la cadena</p></div>
+      <button class="boton-icono boton-icono--cerrar boton-icono--cerrar-chico" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
+    </div>
+    <div class="lateral__cuerpo">
+      <section class="bloque">
+        <div class="bloque__titulo">{% icono "storefront" %}Datos de la sucursal</div>
+        <label class="campo">Nombre
+          {{ form.nombre|campo:"entrada entrada--media" }}
+          {% for e in form.nombre.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        </label>
+        <label class="campo"><span>Dirección <span class="campo__opcional">· opcional</span></span>
+          {{ form.direccion|campo:"entrada entrada--media" }}
+        </label>
+      </section>
+      <section class="bloque">
+        <div class="bloque__titulo">{% icono "users" %}Usuarios con acceso</div>
+        <div class="casillas">
+          {% for opcion in form.usuarios %}
+            <label class="casilla">{{ opcion.tag }}<span class="casilla__texto">{{ opcion.choice_label }}</span><span class="casilla__extra">{{ opcion.data.value.instance.get_full_name }}</span></label>
+          {% empty %}
+            <p class="campo__ayuda">No hay usuarios de sucursal todavía.</p>
+          {% endfor %}
         </div>
-        <div class="form-actions">
-          <a class="btn btn-secondary" href="#">Cancelar</a>
-          <button class="btn btn-primary" type="submit">Inicializar sucursal</button>
+      </section>
+      <div class="nota nota--pozo">{% icono "info" %}<span>Se crea activa y vacía, sin categorías ni productos, y aparece en la tienda de inmediato. Después podés inicializarla copiando el catálogo de otra sucursal.</span></div>
+    </div>
+    <div class="lateral__pie">
+      <button class="boton boton--grande lateral__guardar" type="submit" data-texto-envio="Creando…">Crear sucursal</button>
+      <button class="boton boton--secundario boton--grande lateral__cancelar" type="button" data-cerrar>Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+{% for s in sucursales %}
+<dialog class="capa capa--modal" id="editar-sucursal-{{ s.pk }}" aria-label="Editar {{ s.nombre }}"{% if s.modal_forzado_abierto %} data-abrir-al-cargar{% endif %}>
+  <div class="capa__velo"></div>
+  <form class="modal modal--ancho" method="post" action="{% url 'panel:sucursal_editar' s.pk %}" novalidate>
+    {% with form=s.edit_form %}{% include "panel/_sucursal_form_fields.html" %}{% endwith %}
+  </form>
+</dialog>
+
+<dialog class="capa capa--modal" id="inicializar-sucursal-{{ s.pk }}" aria-labelledby="inicializar-sucursal-{{ s.pk }}-t">
+  <div class="capa__velo"></div>
+  <div class="modal">
+    <h2 class="titulo-dialogo" id="inicializar-sucursal-{{ s.pk }}-t">Inicializar productos de {{ s.nombre }}</h2>
+    {% if s.tiene_inventario %}
+      <p class="modal__texto">{{ s.nombre }} ya tiene productos cargados. Solo se puede inicializar una sucursal sin inventario.</p>
+      <div class="modal__acciones"><button class="boton boton--secundario" type="button" data-cerrar>Cerrar</button></div>
+    {% else %}
+      <p class="modal__texto">Se copian las categorías y los productos de la sucursal que elijas, con <b>stock 0</b> y <b>no disponibles</b>. Nada aparece en la tienda hasta que alguien los marque como disponibles.</p>
+      <form class="modal__formulario" method="post" action="{% url 'panel:sucursal_inicializar' s.pk %}" data-requiere-seleccion>
+        {% csrf_token %}
+        <label class="campo">Copiar desde
+          <select class="entrada" name="origen" required>
+            <option value="">Elegí una sucursal</option>
+            {% for otra in sucursales %}{% if otra.pk != s.pk %}
+              <option value="{{ otra.pk }}">{{ otra.nombre }} · {{ otra.cantidad_productos }} productos{% if not otra.activo %} (inactiva){% endif %}</option>
+            {% endif %}{% endfor %}
+          </select>
+        </label>
+        <div class="modal__acciones">
+          <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+          <button class="boton" type="submit" disabled>Inicializar</button>
         </div>
       </form>
     {% endif %}
   </div>
-</div>
-<div id="borrar-sucursal-{{ sucursal.pk }}" class="modal-overlay">
-  <div class="modal-box">
-    <h3>¿Eliminar "{{ sucursal.nombre }}"?</h3>
-    <p>Esta acción no se puede deshacer. Se van a eliminar también sus categorías y su inventario. Los productos globales que también estén en otras sucursales no se ven afectados.</p>
-    <div class="modal-actions">
-      <a class="btn btn-secondary" href="#">Cancelar</a>
-      <form method="post" action="{% url 'panel:sucursal_eliminar' sucursal.pk %}">
+</dialog>
+
+<dialog class="capa capa--modal" id="borrar-sucursal-{{ s.pk }}" aria-labelledby="borrar-sucursal-{{ s.pk }}-t">
+  <div class="capa__velo"></div>
+  <div class="modal">
+    <h2 class="titulo-dialogo" id="borrar-sucursal-{{ s.pk }}-t">Eliminar {{ s.nombre }}</h2>
+    <div class="nota nota--error">{% icono "warning-octagon" %}<span>Se eliminan {{ s.cantidad_productos }} producto{{ s.cantidad_productos|pluralize }} de su inventario y {{ s.cantidad_categorias }} categoría{{ s.cantidad_categorias|pluralize }}. Los productos globales y los usuarios no se tocan; los usuarios pierden el acceso a esta sucursal. Esta acción no se puede deshacer.</span></div>
+    {% if sucursal_activa and sucursal_activa.pk == s.pk %}<p class="modal__alerta">Es la sucursal con la que estás trabajando ahora.</p>{% endif %}
+    {% if s.es_ultima_activa %}<p class="modal__alerta">Es la única sucursal activa: la tienda va a quedar sin sucursales.</p>{% endif %}
+    <label class="campo">Para confirmar, escribí «{{ s.nombre }}»
+      <input class="entrada entrada--peligro" type="text" autocomplete="off" data-confirmar-nombre="{{ s.nombre }}" data-boton="eliminar-sucursal-{{ s.pk }}">
+    </label>
+    <div class="modal__acciones">
+      <button class="boton boton--secundario" type="button" data-cerrar>Cancelar</button>
+      {% if s.activo %}
+        <form method="post" action="{% url 'panel:sucursal_toggle_activo' s.pk %}">{% csrf_token %}<button class="boton boton--secundario" type="submit">Desactivar en su lugar</button></form>
+      {% endif %}
+      <form method="post" action="{% url 'panel:sucursal_eliminar' s.pk %}">
         {% csrf_token %}
-        <button class="btn btn-danger" type="submit">Eliminar sucursal</button>
+        <button class="boton boton--peligro" type="submit" id="eliminar-sucursal-{{ s.pk }}" disabled>Eliminar sucursal</button>
       </form>
     </div>
   </div>
-</div>
+</dialog>
 {% endfor %}
 {% endblock %}

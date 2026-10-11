@@ -4,35 +4,40 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>{% block title %}Nutrivid Corrientes{% endblock %}</title>
-    <meta name="description" content="{% block description %}Nutrivid Corrientes: dietética con precios por sucursal y pedidos por WhatsApp.{% endblock %}">
-    <meta name="theme-color" content="#F1F2EC" media="(prefers-color-scheme: light)">
-    <meta name="theme-color" content="#13160F" media="(prefers-color-scheme: dark)">
-    <link rel="icon" href="{% static 'tienda/img/favicon.svg' %}" type="image/svg+xml">
-    <link rel="preload" href="{% static 'tienda/fonts/geist.woff2' %}" as="font" type="font/woff2" crossorigin>
-    <link rel="preload" href="{% static 'tienda/fonts/bricolage-grotesque.woff2' %}" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="{% static 'tienda/css/tokens.css' %}">
-    <link rel="stylesheet" href="{% static 'tienda/css/base.css' %}">
-    <link rel="stylesheet" href="{% static 'tienda/css/botones.css' %}">
-    <link rel="stylesheet" href="{% static 'tienda/css/formularios.css' %}">
-    <link rel="stylesheet" href="{% static 'tienda/css/layout.css' %}">
+    <meta name="description" content="{% block description %}Nutrivid Corrientes: dietética con stock por sucursal y pedidos por WhatsApp.{% endblock %}">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="icon" href="{% static 'comun/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="preload" href="{% static 'comun/fonts/geist.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{% static 'comun/fonts/bricolage-grotesque.woff2' %}" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="{% static 'comun/css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'comun/css/base.css' %}">
+    <link rel="stylesheet" href="{% static 'comun/css/componentes.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/tienda.css' %}">
     <link rel="stylesheet" href="{% static 'tienda/css/tarjetas.css' %}">
-    <link rel="stylesheet" href="{% static 'tienda/css/dialogos.css' %}">
+    <link rel="stylesheet" href="{% static 'tienda/css/hojas.css' %}">
     {% block estilos %}{% endblock %}
   </head>
-  <body data-pagina="{{ pagina }}">
+  <body class="tienda" data-pagina="{{ pagina }}">
     <a class="salto" href="#contenido">Saltar al contenido</a>
 
     {% include "tienda/parciales/_cabecera.html" %}
 
     <main id="contenido">
-      {% block contenido %}{% endblock %}
+      <div class="sin-sucursales" id="sinSucursales" hidden>
+        <svg class="i" aria-hidden="true" focusable="false"><use href="{% static 'comun/img/iconos.svg' %}#i-storefront"></use></svg>
+        <p class="sin-sucursales__titulo">No hay sucursales disponibles en este momento.</p>
+        <p class="texto-2">Volvé a intentar más tarde.</p>
+      </div>
+      <div id="contenidoTienda">
+        {% block contenido %}{% endblock %}
+      </div>
     </main>
 
     {% include "tienda/parciales/_pie.html" %}
     {% include "tienda/parciales/_barra_pedido.html" %}
-    {% include "tienda/parciales/_carrito.html" %}
-    {% include "tienda/parciales/_detalle.html" %}
     {% include "tienda/parciales/_sucursal.html" %}
+    {% include "tienda/parciales/_detalle.html" %}
+    {% include "tienda/parciales/_carrito.html" %}
     <div class="avisos" id="avisos" role="status" aria-live="polite"></div>
 
     {{ config_tienda|json_script:"config-tienda" }}

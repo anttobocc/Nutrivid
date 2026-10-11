@@ -7,12 +7,13 @@ from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import Count, ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 
-from productos.models import Categoria, InventarioSucursal
+from productos.constantes import STOCK_BAJO
+from productos.models import Categoria, InventarioSucursal, Producto
 from sucursales.models import Sucursal
 from sucursales.permisos import get_sucursal_activa, set_sucursal_activa, sucursales_permitidas
 
@@ -84,6 +85,8 @@ def sucursal_activa_set(request):
     permitidas = sucursales_permitidas(request.user)
     sucursal = get_object_or_404(permitidas, pk=request.POST.get("sucursal_id"))
     set_sucursal_activa(request, sucursal)
+    # extra_tags: el panel resalta la sucursal activa en el menú al llegar.
+    messages.success(request, f"Ahora estás trabajando en {sucursal.nombre}.", extra_tags="cambio-sucursal")
     return redirect("panel:dashboard")
 
 
@@ -95,14 +98,55 @@ def _lista_inventarios(sucursal):
     )
 
 
+def _contexto_productos(request, sucursal, *, prod_form=None, inv_form=None, modo=None, inventario=None):
+    """Contexto de la pantalla de productos. El formulario de alta siempre se
+    incluye (panel lateral cerrado); si `modo` viene dado, ese panel se abre
+    al cargar la página (alta o edición, con o sin errores)."""
+    inventarios = list(_lista_inventarios(sucursal))
+    agotados = sum(1 for inv in inventarios if inv.stock == 0)
+    bajos = sum(1 for inv in inventarios if 0 < inv.stock <= STOCK_BAJO)
+    categorias_sucursal = list(Categoria.objects.filter(sucursal=sucursal).order_by("nombre"))
+    contexto = {
+        "inventarios": inventarios,
+        "stock_bajo": STOCK_BAJO,
+        "resumen": {"total": len(inventarios), "agotados": agotados, "bajos": bajos},
+        "conteos": {
+            "stock": len(inventarios) - agotados,
+            "agotado": agotados,
+            "oferta": sum(1 for inv in inventarios if inv.producto.oferta),
+            "nuevo": sum(1 for inv in inventarios if inv.producto.nuevo),
+            "nodisp": sum(1 for inv in inventarios if not inv.disponible),
+        },
+        "categorias_filtro": [c for c in categorias_sucursal if any(inv.categoria_id == c.pk for inv in inventarios)],
+        # El precio es global: se avisa en qué otras sucursales activas también cambia.
+        "otras_sucursales": list(
+            Sucursal.objects.filter(activo=True).exclude(pk=sucursal.pk).order_by("nombre").values_list("nombre", flat=True)
+        ),
+        # Para avisar en el alta si ya existe un producto global con ese nombre.
+        "nombres_productos": list(Producto.objects.values_list("nombre", flat=True)),
+        "form_alta": prod_form if modo == "crear" else ProductoGlobalForm(auto_id="alta_%s"),
+        "inv_alta": inv_form if modo == "crear" else InventarioForm(sucursal=sucursal, auto_id="alta_%s"),
+        "modo": modo,
+    }
+    if modo == "editar":
+        contexto.update({
+            "prod_form": prod_form,
+            "inv_form": inv_form,
+            "inventario": inventario,
+            "producto": inventario.producto,
+            "puede_editar_global": request.user.is_superuser,
+        })
+    return contexto
+
+
 @login_required
 def dashboard(request):
     sucursal = get_sucursal_activa(request)
     if sucursal is None:
-        return render(request, "panel/sin_sucursal.html")
-    return render(request, "panel/dashboard.html", {
-        "inventarios": _lista_inventarios(sucursal),
-    })
+        # Sin sucursal resuelta: el panel se muestra con la ventana para
+        # elegirla (o el aviso de que no tiene ninguna asignada).
+        return render(request, "panel/elegir_sucursal.html")
+    return render(request, "panel/dashboard.html", _contexto_productos(request, sucursal))
 
 
 @login_required
@@ -117,8 +161,8 @@ def producto_crear(request):
         return redirect("panel:dashboard")
 
     if request.method == "POST":
-        prod_form = ProductoGlobalForm(request.POST, request.FILES)
-        inv_form = InventarioForm(request.POST, sucursal=sucursal)
+        prod_form = ProductoGlobalForm(request.POST, request.FILES, auto_id="alta_%s")
+        inv_form = InventarioForm(request.POST, sucursal=sucursal, auto_id="alta_%s")
         if prod_form.is_valid() and inv_form.is_valid():
             producto = prod_form.save()
             inventario = inv_form.save(commit=False)
@@ -128,16 +172,12 @@ def producto_crear(request):
             messages.success(request, "Producto creado correctamente.")
             return redirect("panel:dashboard")
     else:
-        prod_form = ProductoGlobalForm()
-        inv_form = InventarioForm(sucursal=sucursal)
+        prod_form = ProductoGlobalForm(auto_id="alta_%s")
+        inv_form = InventarioForm(sucursal=sucursal, auto_id="alta_%s")
 
-    return render(request, "panel/dashboard.html", {
-        "inventarios": _lista_inventarios(sucursal),
-        "prod_form": prod_form,
-        "inv_form": inv_form,
-        "modo": "crear",
-        "puede_editar_global": True,
-    })
+    return render(request, "panel/dashboard.html", _contexto_productos(
+        request, sucursal, prod_form=prod_form, inv_form=inv_form, modo="crear",
+    ))
 
 
 @login_required
@@ -183,14 +223,9 @@ def producto_editar(request, pk):
         inv_form = InventarioForm(instance=inventario, sucursal=sucursal)
         prod_form = ProductoGlobalForm(instance=producto, solo_precio=not puede_editar_global)
 
-    return render(request, "panel/dashboard.html", {
-        "inventarios": _lista_inventarios(sucursal),
-        "prod_form": prod_form,
-        "inv_form": inv_form,
-        "modo": "editar",
-        "producto": producto,
-        "puede_editar_global": puede_editar_global,
-    })
+    return render(request, "panel/dashboard.html", _contexto_productos(
+        request, sucursal, prod_form=prod_form, inv_form=inv_form, modo="editar", inventario=inventario,
+    ))
 
 
 @login_required
@@ -234,7 +269,7 @@ def categorias(request):
         return redirect("panel:dashboard")
 
     if request.method == "POST":
-        form = CategoriaForm(request.POST)
+        form = CategoriaForm(request.POST, sucursal=sucursal)
         if form.is_valid():
             categoria = form.save(commit=False)
             categoria.sucursal = sucursal
@@ -242,11 +277,16 @@ def categorias(request):
             messages.success(request, "Categoría creada correctamente.")
             return redirect("panel:categorias")
     else:
-        form = CategoriaForm()
+        form = CategoriaForm(sucursal=sucursal)
 
-    lista = Categoria.objects.filter(sucursal=sucursal).order_by("nombre")
+    lista = _lista_categorias(sucursal)
     _adjuntar_form_edicion(lista, CategoriaForm, "cat")
     return render(request, "panel/categorias.html", {"categorias": lista, "form": form})
+
+
+def _lista_categorias(sucursal):
+    """Categorías de la sucursal con la cantidad de productos que tienen cargados."""
+    return Categoria.objects.filter(sucursal=sucursal).annotate(cantidad=Count("inventarios")).order_by("nombre")
 
 
 @login_required
@@ -259,7 +299,7 @@ def categoria_editar(request, pk):
     # sucursal (o inexistente) da 404, nunca se puede editar por URL manual.
     categoria = get_object_or_404(Categoria, pk=pk, sucursal=sucursal)
     if request.method == "POST":
-        form = CategoriaForm(request.POST, instance=categoria)
+        form = CategoriaForm(request.POST, instance=categoria, sucursal=sucursal, auto_id=f"cat{categoria.pk}_%s")
         if form.is_valid():
             form.save()
             messages.success(request, "Categoría actualizada correctamente.")
@@ -267,9 +307,9 @@ def categoria_editar(request, pk):
         # Invalido: en vez de mandar a la pagina standalone (perdiendo el
         # contexto de "estaba editando desde el modal"), se vuelve a la
         # lista con ESE modal forzado abierto y los errores visibles.
-        lista = Categoria.objects.filter(sucursal=sucursal).order_by("nombre")
+        lista = _lista_categorias(sucursal)
         _adjuntar_form_edicion(lista, CategoriaForm, "cat", pk_error=categoria.pk, form_con_error=form)
-        return render(request, "panel/categorias.html", {"categorias": lista, "form": CategoriaForm()})
+        return render(request, "panel/categorias.html", {"categorias": lista, "form": CategoriaForm(sucursal=sucursal)})
     else:
         form = CategoriaForm(instance=categoria)
     return render(request, "panel/categoria_form.html", {"form": form, "categoria": categoria})
@@ -286,8 +326,14 @@ def categoria_toggle_activo(request, pk):
     categoria = get_object_or_404(Categoria, pk=pk, sucursal=sucursal)
     categoria.activo = request.POST.get("activo") == "on"
     categoria.save(update_fields=["activo"])
-    estado = "activada" if categoria.activo else "desactivada"
-    messages.success(request, f'"{categoria.nombre}" fue {estado}.')
+    cantidad = categoria.inventarios.count()
+    if not categoria.activo and cantidad:
+        # Desactivar la categoría no oculta sus productos en la tienda.
+        publicados = "producto sigue publicado" if cantidad == 1 else "productos siguen publicados"
+        messages.warning(request, f'"{categoria.nombre}" fue desactivada. Sus {cantidad} {publicados} en la tienda.')
+    else:
+        estado = "activada" if categoria.activo else "desactivada"
+        messages.success(request, f'"{categoria.nombre}" fue {estado}.')
     return redirect("panel:categorias")
 
 
@@ -338,10 +384,20 @@ def _lista_sucursales_con_forms(**kwargs_edicion):
     El modal de editar tampoco muestra "activa" (ocultar_activo=True): el
     estado solo se cambia desde el switch de la lista, igual que
     categorías/usuarios."""
-    lista = Sucursal.objects.all().prefetch_related("usuarios").order_by("nombre")
+    lista = list(
+        Sucursal.objects.all()
+        .prefetch_related("usuarios")
+        .annotate(
+            cantidad_productos=Count("inventarios", distinct=True),
+            cantidad_categorias=Count("categorias", distinct=True),
+        )
+        .order_by("nombre")
+    )
     _adjuntar_form_edicion(lista, partial(SucursalForm, ocultar_activo=True), "suc", **kwargs_edicion)
+    activas = sum(1 for s in lista if s.activo)
     for s in lista:
-        s.tiene_inventario = InventarioSucursal.objects.filter(sucursal=s).exists()
+        s.es_ultima_activa = s.activo and activas == 1
+        s.tiene_inventario = s.cantidad_productos > 0
         s.inicializar_form = None if s.tiene_inventario else SucursalInicializarForm(destino=s, auto_id=f"init{s.pk}_%s")
     return lista
 

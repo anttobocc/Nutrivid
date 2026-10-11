@@ -1,26 +1,27 @@
-// Pedido: diálogo del carrito en tres pasos (armar, confirmar, listo), barra
+// Pedido: hoja del carrito en tres pasos (armar, confirmar, listo), barra
 // fija en celular y contador de la cabecera. El pedido se envía abriendo
 // WhatsApp con el mensaje armado; no hay pagos ni backend de pedidos.
+import { abrirCapa, aviso, cerrarCapa } from "../../comun/js/interfaz.js";
 import { carrito, datosPedido } from "./carrito.js";
 import { CONFIG } from "./config.js";
-import { buscarProducto, estado, estadoStock, nombreSucursal } from "./estado.js";
-import { imagenHTML } from "./tarjetas.js";
-import { abrirDialogo } from "./ui.js";
+import { estado, nombreSucursal } from "./estado.js";
+import { lineasPara, resumen } from "./lineas.js";
 import { enlaceWhatsapp, esc, icono, money, productosLabel, unidadesLabel } from "./utils.js";
 
 const $ = (id) => document.getElementById(id);
 const els = {
   dialogo: $("dialogoCarrito"),
-  sub: $("carritoSub"),
   vacio: $("carritoVacio"),
+  armar: $("carritoArmar"),
+  pieArmar: $("carritoPieArmar"),
   lineas: $("carritoLineas"),
   form: $("formPedido"),
-  campoNombre: $("campoNombre"),
   nombre: $("pedidoNombre"),
   nombreError: $("pedidoNombreError"),
   notas: $("pedidoNotas"),
+  contadorNotas: $("pedidoNotasContador"),
+  revisar: $("revisarPedido"),
   mensaje: $("mensajePedido"),
-  pie: $("carritoPie"),
   total: $("carritoTotal"),
   volver: $("volverPedido"),
   whatsapp: $("abrirWhatsapp"),
@@ -34,68 +35,47 @@ const els = {
 
 let paso = "armar";
 
-// Cada ítem del carrito cruzado con el catálogo de la sucursal actual: el
-// precio y el stock vigentes mandan sobre la copia guardada.
-function lineasPedido() {
-  return carrito.items().map(({ product, quantity }) => {
-    const vigente = estado.catalogoCargado ? buscarProducto(product.id) : product;
-    const stock = vigente ? estadoStock(vigente) : null;
-    return {
-      producto: vigente || product,
-      cantidad: quantity,
-      disponible: Boolean(vigente && stock.disponible),
-      enCatalogo: Boolean(vigente),
-      maximo: stock?.maximo ?? 0,
-    };
-  });
-}
-
-function resumen(lineas = lineasPedido()) {
-  return lineas.filter((l) => l.disponible).reduce((acc, l) => {
-    acc.cantidad += Math.min(l.cantidad, l.maximo);
-    acc.total += Math.min(l.cantidad, l.maximo) * l.producto.price;
-    return acc;
-  }, { cantidad: 0, total: 0 });
+function lineas() {
+  // Sin sucursales no hay dónde pedir: el pedido guardado no se muestra.
+  if (estado.sinSucursales) return [];
+  // Antes de que cargue el catálogo, el pedido se muestra con lo guardado.
+  if (!estado.catalogoCargado) {
+    return carrito.items().map(({ product, quantity }) => ({ producto: product, cantidad: quantity, efectiva: quantity, incluida: true, tono: "ok", nota: "" }));
+  }
+  return lineasPara();
 }
 
 function lineaHTML(l) {
   const p = l.producto;
   const nombre = esc(p.name);
-  let avisoLinea = "";
-  if (!l.enCatalogo) avisoLinea = `No está en ${esc(nombreSucursal())}. No se incluye en el pedido.`;
-  else if (!l.disponible) avisoLinea = `Sin stock en ${esc(nombreSucursal())}. No se incluye en el pedido.`;
-  else if (l.cantidad > l.maximo) avisoLinea = `Hay ${unidadesLabel(l.maximo)} en ${esc(nombreSucursal())}. Pedimos esa cantidad.`;
-  const cantidad = l.disponible ? Math.min(l.cantidad, l.maximo) : l.cantidad;
+  const maximo = Number(p.stock) || 0;
+  const imagen = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" decoding="async">` : icono("package");
+  const controles = l.incluida
+    ? `<div class="cantidad cantidad--linea" role="group" aria-label="Cantidad de ${nombre}">
+        <button type="button" data-restar="${p.id}" aria-label="${l.efectiva === 1 ? `Quitar ${nombre}` : "Restar uno"}">${icono(l.efectiva === 1 ? "trash" : "minus")}</button>
+        <output aria-live="polite">${l.efectiva}</output>
+        <button type="button" data-sumar="${p.id}" aria-label="Sumar uno"${estado.catalogoCargado && l.efectiva >= maximo ? " disabled" : ""}>${icono("plus")}</button>
+      </div>`
+    : `<button class="boton boton--secundario linea__quitar" type="button" data-quitar="${p.id}">${icono("trash")}<span>Quitar</span></button>`;
   return `
-    <li class="linea${l.disponible ? "" : " linea--no-disponible"}">
-      <div class="pozo">${imagenHTML(p)}</div>
-      <p class="linea__nombre">${nombre}</p>
-      <p class="linea__total">${l.disponible ? money(p.price * cantidad) : ""}</p>
-      <div class="linea__controles">
-        ${l.disponible ? `
-          <div class="cantidad" role="group" aria-label="Cantidad de ${nombre}">
-            <button type="button" data-restar="${p.id}" aria-label="${cantidad === 1 ? "Quitar" : "Restar uno de"} ${nombre}">${icono(cantidad === 1 ? "trash" : "minus")}</button>
-            <output>${cantidad}</output>
-            <button type="button" data-sumar="${p.id}" aria-label="Sumar uno de ${nombre}"${cantidad >= l.maximo ? " disabled" : ""}>${icono("plus")}</button>
-          </div>
-          <span class="linea__unitario">${money(p.price)} c/u</span>`
-          : `<button class="enlace" type="button" data-quitar="${p.id}">Quitar</button>`}
+    <li class="linea${l.incluida ? "" : " linea--excluida"}">
+      <div class="linea__fila">
+        <span class="linea__imagen">${imagen}</span>
+        <div><p class="linea__nombre">${nombre}</p><p class="linea__unitario">${money(p.price)} c/u</p></div>
+        <p class="linea__subtotal">${l.incluida ? money(l.efectiva * p.price) : "—"}</p>
       </div>
-      ${avisoLinea ? `<p class="linea__aviso">${icono("warning-circle")}${avisoLinea}</p>` : ""}
+      ${l.nota ? `<p class="linea__nota${l.tono === "fuera" ? " linea__nota--fuera" : ""}">${icono("info")}<span>${esc(l.nota)}</span></p>` : ""}
+      <div class="linea__controles">${controles}</div>
     </li>`;
 }
 
-export function mensajePedido({ nombre, notas }, lineas = lineasPedido()) {
-  const incluidas = lineas.filter((l) => l.disponible);
-  const { total } = resumen(lineas);
-  const items = incluidas.map((l) => {
-    const cantidad = Math.min(l.cantidad, l.maximo);
-    return `• ${l.producto.name}, ${unidadesLabel(cantidad)}: ${money(l.producto.price * cantidad)}`;
-  });
+export function mensajePedido({ nombre, notas }, todas = lineas()) {
+  const incluidas = todas.filter((l) => l.incluida);
+  const { total } = resumen(todas);
   return [
     `Hola Nutrivid, quiero hacer este pedido en ${nombreSucursal()}:`,
     "",
-    ...items,
+    ...incluidas.map((l) => `• ${l.producto.name}, ${unidadesLabel(l.efectiva)}: ${money(l.efectiva * l.producto.price)}`),
     "",
     `Total estimado: ${money(total)}`,
     `Nombre: ${nombre}`,
@@ -105,94 +85,105 @@ export function mensajePedido({ nombre, notas }, lineas = lineasPedido()) {
 
 function irAPaso(nuevo) {
   paso = nuevo;
-  els.dialogo.querySelectorAll("[data-paso]").forEach((s) => { s.hidden = s.dataset.paso !== paso; });
-  els.dialogo.querySelectorAll("[data-pie]").forEach((s) => { s.hidden = s.dataset.pie !== paso; });
-  els.dialogo.querySelector(".panel__cuerpo").scrollTop = 0;
-}
-
-function validarNombre() {
-  const valido = els.nombre.value.trim().length >= 2;
-  els.nombreError.hidden = valido;
-  els.campoNombre.classList.toggle("campo--error", !valido);
-  els.nombre.setAttribute("aria-invalid", String(!valido));
-  return valido;
+  renderPedido();
 }
 
 function datos() {
   return { nombre: els.nombre.value.trim(), notas: els.notas.value.trim() };
 }
 
-export function renderPedido() {
-  const lineas = lineasPedido();
-  const { cantidad, total } = resumen(lineas);
-  const hayItems = lineas.length > 0;
-  const hayIncluidos = lineas.some((l) => l.disponible);
-
-  // Contador y barra fija
-  els.contador.hidden = cantidad === 0;
-  els.contador.textContent = cantidad;
-  els.botonCarrito.setAttribute("aria-label", cantidad ? `Ver pedido, ${productosLabel(cantidad)}` : "Ver pedido");
-  els.barra.hidden = cantidad === 0;
-  document.documentElement.classList.toggle("con-barra", cantidad > 0);
-  els.barraCantidad.textContent = productosLabel(cantidad);
-  els.barraTotal.textContent = money(total);
-
-  // Diálogo
-  els.sub.textContent = estado.sucursalActual ? `En ${nombreSucursal()}` : "";
-  els.vacio.hidden = hayItems;
-  els.form.hidden = !hayIncluidos;
-  els.pie.hidden = !hayItems && paso !== "listo";
-  els.total.textContent = money(total);
-  els.lineas.innerHTML = lineas.map(lineaHTML).join("");
-  els.dialogo.querySelector('[data-pie="armar"] button').disabled = !hayIncluidos;
-  if (!hayItems && paso === "confirmar") irAPaso("armar");
+function mostrarErrorNombre(mostrar) {
+  els.nombreError.hidden = !mostrar;
+  els.nombre.setAttribute("aria-invalid", String(mostrar));
 }
 
-function confirmar(event) {
+export function renderPedido() {
+  const todas = lineas();
+  const { unidades, total } = resumen(todas);
+  const hayItems = todas.length > 0;
+  const hayIncluidos = todas.some((l) => l.incluida);
+
+  // Contador y barra fija
+  els.contador.hidden = unidades === 0;
+  els.contador.textContent = unidades;
+  els.botonCarrito.setAttribute("aria-label", `Ver pedido, ${productosLabel(unidades)}`);
+  els.barra.hidden = unidades === 0;
+  document.documentElement.classList.toggle("con-barra", unidades > 0);
+  els.barraCantidad.textContent = productosLabel(unidades);
+  els.barraTotal.textContent = money(total);
+
+  // Si se vació el pedido mientras se confirmaba, se vuelve a armar.
+  if (!hayIncluidos && paso === "confirmar") paso = "armar";
+
+  // Hoja
+  els.dialogo.querySelectorAll("[data-paso]").forEach((el) => { el.hidden = el.dataset.paso !== paso; });
+  if (paso === "armar") {
+    els.vacio.hidden = hayItems;
+    els.armar.hidden = !hayItems;
+    els.pieArmar.hidden = !hayItems;
+  }
+  els.form.hidden = !hayIncluidos;
+  els.revisar.disabled = !hayIncluidos;
+  els.total.textContent = money(total);
+  els.lineas.innerHTML = todas.map(lineaHTML).join("");
+}
+
+function revisar(event) {
   event.preventDefault();
-  if (!validarNombre()) {
+  const nombre = els.nombre.value.trim();
+  if (nombre.length < 2 || nombre.length > 80) {
+    mostrarErrorNombre(true);
     els.nombre.focus();
     return;
   }
+  mostrarErrorNombre(false);
   datosPedido.guardar(datos());
   const texto = mensajePedido(datos());
   els.mensaje.textContent = texto;
-  if (CONFIG.whatsapp) {
-    els.whatsapp.href = enlaceWhatsapp(texto);
-    els.whatsapp.removeAttribute("aria-disabled");
-  } else {
-    els.whatsapp.removeAttribute("href");
-    els.whatsapp.setAttribute("aria-disabled", "true");
-  }
+  if (CONFIG.whatsapp) els.whatsapp.href = enlaceWhatsapp(texto);
+  else els.whatsapp.removeAttribute("href");
   irAPaso("confirmar");
 }
 
 export function abrirPedido() {
-  if (paso !== "listo") irAPaso("armar");
+  if (paso !== "listo") paso = "armar";
   renderPedido();
-  abrirDialogo(els.dialogo);
+  abrirCapa(els.dialogo);
 }
 
 export function iniciarPedido() {
   const guardados = datosPedido.leer();
   els.nombre.value = guardados.nombre;
   els.notas.value = guardados.notas;
+  els.contadorNotas.textContent = `${els.notas.value.length}/300`;
 
-  els.form.addEventListener("submit", confirmar);
+  els.form.addEventListener("submit", revisar);
   els.nombre.addEventListener("input", () => {
-    if (!els.nombreError.hidden) validarNombre();
+    mostrarErrorNombre(false);
+    datosPedido.guardar(datos());
   });
-  els.form.addEventListener("change", () => datosPedido.guardar(datos()));
+  els.notas.addEventListener("input", () => {
+    els.contadorNotas.textContent = `${els.notas.value.length}/300`;
+    datosPedido.guardar(datos());
+  });
   els.volver.addEventListener("click", () => irAPaso("armar"));
-  els.whatsapp.addEventListener("click", () => {
-    if (els.whatsapp.hasAttribute("href")) irAPaso("listo");
+  els.whatsapp.addEventListener("click", (event) => {
+    if (!CONFIG.whatsapp) {
+      event.preventDefault();
+      return;
+    }
+    irAPaso("listo");
   });
-  els.vaciar.addEventListener("click", () => {
+  els.vaciar.addEventListener("click", async () => {
     carrito.vaciar();
-    irAPaso("armar");
+    await cerrarCapa(els.dialogo);
+    aviso("Vaciaste el pedido.");
   });
   els.dialogo.addEventListener("close", () => {
-    if (paso === "listo") irAPaso("armar");
+    if (paso === "listo") {
+      paso = "armar";
+      renderPedido();
+    }
   });
   if (!CONFIG.whatsapp) console.warn("Falta WHATSAPP_NUMBER: no se pueden enviar pedidos.");
 }

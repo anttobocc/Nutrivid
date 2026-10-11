@@ -134,6 +134,24 @@ class CategoriaForm(forms.ModelForm):
             "descripcion": forms.Textarea(attrs={"rows": 2}),
         }
 
+    def __init__(self, *args, sucursal=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sucursal = sucursal
+
+    def clean_nombre(self):
+        """El nombre es único por sucursal (constraint categoria_unica_por_sucursal).
+        Se valida acá, sin distinguir mayúsculas, para mostrar el error en el
+        formulario en lugar de que la base lo rechace con un error 500."""
+        nombre = self.cleaned_data["nombre"].strip()
+        sucursal = self.sucursal or getattr(self.instance, "sucursal", None)
+        if sucursal is not None:
+            repetidas = Categoria.objects.filter(sucursal=sucursal, nombre__iexact=nombre)
+            if self.instance.pk:
+                repetidas = repetidas.exclude(pk=self.instance.pk)
+            if repetidas.exists():
+                raise forms.ValidationError(f"Ya existe una categoría «{nombre}» en {sucursal.nombre}.")
+        return nombre
+
 
 class SucursalForm(forms.ModelForm):
     """CRUD de sucursales + a qué usuarios (no superusuarios) se les da acceso.
@@ -149,6 +167,9 @@ class SucursalForm(forms.ModelForm):
         widgets = {
             "usuarios": forms.CheckboxSelectMultiple,
             "activo": forms.CheckboxInput(attrs={"class": "switch-input"}),
+        }
+        error_messages = {
+            "nombre": {"unique": "Ya existe una sucursal con ese nombre."},
         }
 
     def __init__(self, *args, ocultar_activo=False, **kwargs):

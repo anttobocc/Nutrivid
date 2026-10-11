@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from sucursales.models import Sucursal
 
+from .constantes import STOCK_BAJO
 from .models import Categoria, InventarioSucursal
 
 
@@ -22,16 +23,13 @@ def _config_tienda():
                 "sucursales": reverse("productos:api_sucursales"),
             },
         },
-        "iconos": static("tienda/img/iconos.svg"),
-        # Fotos del carrusel (static/tienda/js/promos.js las referencia por clave).
+        "iconos": static("comun/img/iconos.svg"),
+        "stockBajo": STOCK_BAJO,
+        # Fotos del carrusel de promociones (static/tienda/js/promos.js las
+        # referencia por clave).
         "imagenes": {
-            clave: static(f"tienda/img/productos/recortadas/{archivo}.webp")
-            for clave, archivo in (
-                ("colageno", "colageno-hidrolizado"),
-                ("frutosSecos", "mix-premium-frutos-secos"),
-                ("sinTacc", "premezcla-sintacc"),
-                ("proteina", "proteina-whey"),
-            )
+            clave: static(f"tienda/img/promos/{clave}.webp")
+            for clave in ("colageno", "frutos-secos", "sin-tacc", "proteina")
         },
     }
 

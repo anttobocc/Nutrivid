@@ -1,0 +1,119 @@
+{% load tienda %}
+{% comment %}
+Panel lateral del producto (alta o edición). Combina dos formularios:
+- prod_form: datos GLOBALES del producto. Al crear (o si es superusuario)
+  trae todos los campos; si no, solo precio y precio anterior (ver
+  ProductoGlobalForm.solo_precio) y el resto se muestra de solo lectura.
+- inv_form: datos de la sucursal activa (categoría, stock, disponible).
+Espera: prod_form, inv_form, modo_form ("crear" | "editar"), id_capa, abrir.
+{% endcomment %}
+{% if modo_form == "crear" %}{% firstof True as global %}{% else %}{% firstof puede_editar_global as global %}{% endif %}
+<dialog class="capa capa--lateral" id="{{ id_capa }}" aria-labelledby="{{ id_capa }}-t"{% if abrir == modo_form %} data-abrir-al-cargar{% endif %} data-al-cerrar="{% url 'panel:dashboard' %}">
+  <div class="capa__velo"></div>
+  <form class="lateral form-producto" method="post" enctype="multipart/form-data" novalidate data-formulario-envio data-avisar-cambios
+        action="{% if modo_form == 'editar' %}{% url 'panel:producto_editar' inventario.pk %}{% else %}{% url 'panel:producto_crear' %}{% endif %}">
+    {% csrf_token %}
+    <div class="lateral__cabecera">
+      <div style="flex:1;min-width:0">
+        <h2 class="lateral__titulo" id="{{ id_capa }}-t">{% if modo_form == "editar" %}Editar producto{% else %}Nuevo producto{% endif %}</h2>
+        <p class="lateral__subtitulo">Inventario de {{ sucursal_activa.nombre }}</p>
+      </div>
+      <button class="boton-icono boton-icono--cerrar boton-icono--cerrar-chico" type="button" data-cerrar aria-label="Cerrar">{% icono "x" %}</button>
+    </div>
+
+    <div class="lateral__cuerpo">
+      {% if prod_form.non_field_errors or inv_form.non_field_errors %}
+        <div class="mensaje mensaje--error" role="alert">{% icono "x-circle-fill" %}<span class="mensaje__texto">{{ prod_form.non_field_errors|join:" " }} {{ inv_form.non_field_errors|join:" " }}</span></div>
+      {% endif %}
+
+      {# Datos globales #}
+      <section class="bloque bloque--compacto">
+        <div class="bloque__titulo">{% icono "globe-simple" %}Producto · igual en todas las sucursales</div>
+        {% if global %}
+          <label class="campo">Nombre
+            {{ prod_form.nombre|campo }}
+            {% for e in prod_form.nombre.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+            {% if modo_form == "crear" %}<span class="nota nota--aviso" data-aviso-duplicado hidden>{% icono "warning" %}<span></span></span>{% endif %}
+          </label>
+        {% else %}
+          <div class="solo-lectura">
+            {% if producto.imagen %}<img class="solo-lectura__foto" src="{{ producto.imagen.url }}" alt="">{% else %}<span class="solo-lectura__foto"></span>{% endif %}
+            <div><p class="solo-lectura__nombre">{{ producto.nombre }}</p><p class="solo-lectura__texto">{{ producto.descripcion }}</p></div>
+          </div>
+          <div class="nota">{% icono "lock-simple" %}El nombre, la descripción y la imagen son del producto y los comparten todas las sucursales. Solo un administrador puede modificarlos.</div>
+        {% endif %}
+
+        <div class="campos-2">
+          <label class="campo">Precio (ARS)
+            {{ prod_form.precio|campo }}
+          </label>
+          <label class="campo">Precio anterior <span class="campo__opcional campo__opcional--chico">Opcional, se muestra tachado</span>
+            {{ prod_form.precio_anterior|campo }}
+          </label>
+        </div>
+        {% for e in prod_form.precio.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        {% for e in prod_form.precio_anterior.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        <div class="nota nota--salvia">{% icono "globe-simple" %}{% if otras_sucursales %}Compartido por todas las sucursales: también cambia en {{ otras_sucursales|join:", " }}.{% else %}Compartido por todas las sucursales.{% endif %}</div>
+        <span class="campo__advertencia" data-aviso-precio-cero hidden>El precio es $ 0. Revisalo antes de guardar.</span>
+        <span class="campo__advertencia" data-aviso-precio-anterior hidden>El precio anterior no es mayor que el actual: la tienda no va a mostrar descuento.</span>
+
+        {% if global %}
+          <label class="campo">Descripción <span class="campo__opcional campo__opcional--chico">Opcional</span>
+            {{ prod_form.descripcion|campo }}
+          </label>
+          <div class="campo">Imagen
+            <div class="selector-imagen">
+              {% if modo_form == "editar" and producto.imagen %}
+                <img class="selector-imagen__vista" src="{{ producto.imagen.url }}" alt="" data-vista-imagen>
+              {% else %}
+                <span class="selector-imagen__vista selector-imagen__vista--vacia" data-vista-imagen>{% icono "image" %}</span>
+              {% endif %}
+              <label class="boton boton--secundario selector-imagen__boton">{% icono "upload-simple" %}Elegir archivo
+                <input class="sr-only" type="file" name="imagen" accept="image/jpeg,image/png,image/webp" data-entrada-imagen>
+              </label>
+            </div>
+            <span class="campo__ayuda">JPG, PNG o WebP. Se guarda en WebP de hasta 1200 px.</span>
+            {% for e in prod_form.imagen.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+          </div>
+          <fieldset class="etiquetas">
+            <legend class="etiquetas__titulo">Etiquetas en la tienda</legend>
+            <div class="casillas casillas--fila">
+              <label class="casilla casilla--chica"><input type="checkbox" name="destacado"{% if prod_form.destacado.value %} checked{% endif %}><span>Destacado</span></label>
+              <label class="casilla casilla--chica"><input type="checkbox" name="nuevo"{% if prod_form.nuevo.value %} checked{% endif %}><span>Nuevo</span></label>
+              <label class="casilla casilla--chica"><input type="checkbox" name="oferta"{% if prod_form.oferta.value %} checked{% endif %}><span>Oferta</span></label>
+            </div>
+          </fieldset>
+        {% endif %}
+      </section>
+
+      {# Datos de la sucursal #}
+      <section class="bloque bloque--compacto bloque--sucursal">
+        <div class="bloque__titulo"><span class="punto-sucursal"></span>Solo en {{ sucursal_activa.nombre }}</div>
+        <label class="campo">Categoría en {{ sucursal_activa.nombre }}
+          <select class="entrada" name="categoria"{% if inv_form.categoria.errors %} aria-invalid="true"{% endif %}>
+            <option value="">Elegí una categoría</option>
+            {% for c in inv_form.fields.categoria.queryset %}
+              <option value="{{ c.pk }}"{% if inv_form.categoria.value|stringformat:"s" == c.pk|stringformat:"s" %} selected{% endif %}>{{ c.nombre }}{% if not c.activo %} (inactiva){% endif %}</option>
+            {% endfor %}
+          </select>
+          {% for e in inv_form.categoria.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+        </label>
+        <label class="campo">Stock en {{ sucursal_activa.nombre }}
+          {{ inv_form.stock|campo:"entrada entrada--stock" }}
+          {% for e in inv_form.stock.errors %}<span class="campo__error" role="alert">{{ e }}</span>{% endfor %}
+          <span class="campo__ayuda">Los pedidos por WhatsApp no descuentan stock: se actualiza a mano.</span>
+        </label>
+        <label class="interruptor interruptor--grande">
+          <input class="sr-only" type="checkbox" name="disponible" role="switch"{% if inv_form.disponible.value %} checked{% endif %} data-interruptor>
+          <span class="interruptor__pista" aria-hidden="true"></span>
+          <span><b>Disponible en {{ sucursal_activa.nombre }}</b><br><span class="interruptor__ayuda" data-texto-si="Sí, se publica en la tienda" data-texto-no="No, queda oculto en la tienda">{% if inv_form.disponible.value %}Sí, se publica en la tienda{% else %}No, queda oculto en la tienda{% endif %}</span></span>
+        </label>
+      </section>
+    </div>
+
+    <div class="lateral__pie">
+      <button class="boton boton--grande lateral__guardar" type="submit" data-texto-envio="Guardando…">{% if modo_form == "editar" %}Guardar cambios{% else %}Crear producto{% endif %}</button>
+      <button class="boton boton--secundario boton--grande lateral__cancelar" type="button" data-cerrar>Cancelar</button>
+    </div>
+  </form>
+</dialog>
