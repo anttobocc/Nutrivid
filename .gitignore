@@ -25,14 +25,11 @@ Thumbs.db
 # collectstatic
 staticfiles/
 
-# Capturas de Playwright
-.playwright-mcp/
-
 # Copias locales de la base
 db.sqlite3.backup-*
 
-# Salida de herramientas/recortar_fondos.py (se revisa antes de usarla)
-herramientas/recortes/
-
-# Fotos subidas desde el panel y copiadas por importar_productos (se regeneran)
+# Fotos subidas desde el panel (se regeneran)
 media/
+
+# Salida de herramientas/recortar_fondos.py
+herramientas/recortes/
